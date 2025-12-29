@@ -50,7 +50,7 @@ interface GameState {
 
 type GameAction =
   | { type: "TICK"; deltaMs: number }
-  | { type: "STOP_FIGHTING" }
+  | { type: "SET_FIGHTING"; value: boolean }
   | { type: "RESTART" };
 
 const createInitialState = (): GameState => ({
@@ -171,8 +171,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return newState;
     }
 
-    case "STOP_FIGHTING":
-      return { ...state, isFighting: false };
+    case "SET_FIGHTING":
+      return { ...state, isFighting: action.value };
 
     case "RESTART":
       return createInitialState();
@@ -193,14 +193,18 @@ export default function IdleFightScreen() {
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTickRef = useRef<number>(Date.now());
 
+  function stopGameLoop() {
+    if (gameLoopRef.current) {
+      clearInterval(gameLoopRef.current);
+      gameLoopRef.current = null;
+    }
+  }
+
   // Game loop
   useEffect(() => {
     if (!isFighting) {
-      if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
-        gameLoopRef.current = null;
-      }
       console.log("stopping game loop");
+      stopGameLoop();
       return;
     }
     console.log("starting game loop");
@@ -213,15 +217,8 @@ export default function IdleFightScreen() {
       dispatch({ type: "TICK", deltaMs });
     }, TICK_RATE);
 
-    return () => {
-      if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
-        gameLoopRef.current = null;
-      }
-    };
+    return () => stopGameLoop();
   }, [isFighting]);
-
-  const handleStop = () => dispatch({ type: "STOP_FIGHTING" });
 
   const handleRestart = useCallback(() => {
     resetAnimations();
@@ -268,10 +265,10 @@ export default function IdleFightScreen() {
       </View>
 
       <View style={styles.middleSection}>
-        {!isFighting ? (
+        {user.health <= 0 ? (
           <View style={styles.gameOverContainer}>
             <Text variant="headlineSmall" style={styles.gameOverText}>
-              {user.health <= 0 ? "Game Over!" : "Paused"}
+              Game Over!
             </Text>
             <Button
               mode="contained"
@@ -282,10 +279,19 @@ export default function IdleFightScreen() {
               Restart
             </Button>
           </View>
+        ) : !isFighting ? (
+          <Button
+            mode="contained"
+            onPress={() => dispatch({ type: "SET_FIGHTING", value: true })}
+            style={styles.restartButton}
+            buttonColor="#4a90e2"
+          >
+            Fight!
+          </Button>
         ) : (
           <Button
             mode="contained"
-            onPress={handleStop}
+            onPress={() => dispatch({ type: "SET_FIGHTING", value: false })}
             style={styles.restartButton}
             buttonColor="#4a90e2"
           >
