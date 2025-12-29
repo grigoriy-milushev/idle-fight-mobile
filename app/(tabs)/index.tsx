@@ -182,15 +182,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
   }
 }
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
 export default function IdleFightScreen() {
   const [state, dispatch] = useReducer(gameReducer, null, createInitialState);
   const { user, monster, isFighting, respawnTimer } = state;
 
-  // Attack animations
   const { userAnimatedStyle, monsterAnimatedStyle, resetAnimations } =
     useAttackAnimations(user.health, monster.health);
 
@@ -226,9 +221,7 @@ export default function IdleFightScreen() {
     };
   }, [isFighting]);
 
-  const handleStop = useCallback(() => {
-    dispatch({ type: "STOP_FIGHTING" });
-  }, []);
+  const handleStop = () => dispatch({ type: "STOP_FIGHTING" });
 
   const handleRestart = useCallback(() => {
     resetAnimations();
@@ -239,7 +232,6 @@ export default function IdleFightScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      {/* Monster Section - Top */}
       <View style={styles.monsterSection}>
         <Card style={styles.monsterCard}>
           <Card.Content style={styles.monsterContent}>
@@ -275,7 +267,6 @@ export default function IdleFightScreen() {
         </Card>
       </View>
 
-      {/* Middle Section */}
       <View style={styles.middleSection}>
         {!isFighting ? (
           <View style={styles.gameOverContainer}>
@@ -303,7 +294,6 @@ export default function IdleFightScreen() {
         )}
       </View>
 
-      {/* User Section - Bottom */}
       <View style={styles.userSection}>
         <Card style={styles.userCard}>
           <Card.Content style={styles.userContent}>
