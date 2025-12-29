@@ -50,11 +50,6 @@ interface GameState {
 
 type GameAction =
   | { type: "TICK"; deltaMs: number }
-  | { type: "USER_ATTACK" }
-  | { type: "MONSTER_ATTACK" }
-  | { type: "MONSTER_DIED" }
-  | { type: "USER_DIED" }
-  | { type: "RESPAWN_MONSTER" }
   | { type: "STOP_FIGHTING" }
   | { type: "RESTART" };
 
