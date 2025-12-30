@@ -1,5 +1,5 @@
 import { useAttackAnimations } from "@/hooks/useAttackAnimations";
-import { Monster, User } from "@/types/game";
+import { Demage, Monster, User } from "@/types/game";
 import React, { useCallback, useEffect, useReducer, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Card, ProgressBar, Text } from "react-native-paper";
@@ -19,7 +19,7 @@ const calculateExpToNextLevel = (level: number): number =>
 const createInitialUser = (): User => ({
   health: 100,
   maxHealth: 100,
-  damage: 10,
+  damage: { from: 1, to: 3 },
   attackSpeed: 1000,
   experience: 0,
   level: 1,
@@ -31,7 +31,7 @@ const createMonster = (userLevel: number = 1): Monster => ({
   name: "Goblin",
   health: 50 + (userLevel - 1) * 10,
   maxHealth: 50 + (userLevel - 1) * 10,
-  damage: 5 + (userLevel - 1),
+  damage: { from: 1 + (userLevel - 1), to: 3 + (userLevel - 1) },
   attackSpeed: 3000,
 });
 
@@ -88,13 +88,19 @@ function processTick(state: GameState, deltaMs: number): TickResult {
     };
   }
 
+  function healthAfterAttack(health: number, damage: Demage) {
+    const damageDealt =
+      Math.floor(Math.random() * (damage.to - damage.from + 1)) + damage.from;
+    return Math.max(0, health - damageDealt);
+  }
+
   if (user.health > 0 && monster.health > 0) {
     userAttackTimer += deltaMs;
     monsterAttackTimer += deltaMs;
 
     if (userAttackTimer >= user.attackSpeed) {
       userAttackTimer -= user.attackSpeed;
-      const newMonsterHealth = Math.max(0, monster.health - user.damage);
+      const newMonsterHealth = healthAfterAttack(monster.health, user.damage);
       monster = { ...monster, health: newMonsterHealth };
       userAttacked = true;
 
@@ -111,7 +117,7 @@ function processTick(state: GameState, deltaMs: number): TickResult {
             experienceToNextLevel: calculateExpToNextLevel(newLevel),
             maxHealth: user.maxHealth + 20,
             health: user.maxHealth + 20,
-            damage: user.damage + 2,
+            damage: { from: user.damage.from + 2, to: user.damage.to + 2 },
             attackSpeed: Math.max(user.attackSpeed - 5, 300),
           };
         } else {
@@ -126,7 +132,7 @@ function processTick(state: GameState, deltaMs: number): TickResult {
     // Monster attacks user (only if monster still alive)
     if (monster.health > 0 && monsterAttackTimer >= monster.attackSpeed) {
       monsterAttackTimer -= monster.attackSpeed;
-      const newUserHealth = Math.max(0, user.health - monster.damage);
+      const newUserHealth = healthAfterAttack(user.health, monster.damage);
       user = { ...user, health: newUserHealth };
       monsterAttacked = true;
 
@@ -258,26 +264,27 @@ export default function IdleFightScreen() {
               </Text>
             </View>
             <Text variant="bodySmall" style={styles.statsText}>
-              Attack: {monster.damage} | Speed: {monster.attackSpeed / 1000}s
+              Attack: {monster.damage.from}-{monster.damage.to} | Speed:{" "}
+              {monster.attackSpeed / 1000}s
             </Text>
           </Card.Content>
         </Card>
       </View>
 
       <View style={styles.middleSection}>
+        <Button
+          mode="contained"
+          onPress={handleRestart}
+          style={styles.restartButton}
+          buttonColor="#4a90e2"
+        >
+          Restart
+        </Button>
         {user.health <= 0 ? (
           <View style={styles.gameOverContainer}>
             <Text variant="headlineSmall" style={styles.gameOverText}>
               Game Over!
             </Text>
-            <Button
-              mode="contained"
-              onPress={handleRestart}
-              style={styles.restartButton}
-              buttonColor="#4a90e2"
-            >
-              Restart
-            </Button>
           </View>
         ) : !isFighting ? (
           <Button
@@ -330,7 +337,8 @@ export default function IdleFightScreen() {
               </Text>
             </View>
             <Text variant="bodySmall" style={styles.statsText}>
-              Attack: {user.damage} | Speed: {user.attackSpeed / 1000}s
+              Attack: {user.damage.from}-{user.damage.to} | Speed:{" "}
+              {user.attackSpeed / 1000}s
             </Text>
           </Card.Content>
         </Card>
