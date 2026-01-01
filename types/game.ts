@@ -21,3 +21,14 @@ export type Demage = {
   from: number;
   to: number;
 };
+
+export type GameState = {
+  user: User;
+  monster: Monster;
+  isFighting: boolean;
+  userAttackTimer: number;
+  monsterAttackTimer: number;
+  respawnTimer: number;
+  userAttackedDamage?: number;
+  monsterAttackedDamage?: number;
+};

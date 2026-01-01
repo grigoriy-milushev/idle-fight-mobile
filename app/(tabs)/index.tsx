@@ -1,21 +1,19 @@
 import { FloatingDamageContainer } from "@/components/FloatingDamageContainer";
 import { useAttackAnimations } from "@/hooks/useAttackAnimations";
-import { Demage, Monster, User } from "@/types/game";
+import { GameState, Monster, User } from "@/types/game";
+import {
+  calculateDamageDealt,
+  calculateExpToNextLevel,
+  healthAfterAttack,
+} from "@/utils/calculations";
 import React, { useCallback, useEffect, useReducer, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Card, ProgressBar, Text } from "react-native-paper";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// ============================================================================
-// GAME CONSTANTS & INITIAL STATE
-// ============================================================================
-
 const TICK_RATE = 100; // ms per tick (~10 ticks/sec)
 const RESPAWN_DELAY = 2000; // ms
-
-const calculateExpToNextLevel = (level: number): number =>
-  Math.floor(100 * Math.pow(1.5, level - 1));
 
 const createInitialUser = (): User => ({
   health: 100,
@@ -40,17 +38,6 @@ const createMonster = (userLevel: number = 1): Monster => ({
 // GAME STATE & REDUCER (Battle Engine)
 // ============================================================================
 
-interface GameState {
-  user: User;
-  monster: Monster;
-  isFighting: boolean;
-  userAttackTimer: number;
-  monsterAttackTimer: number;
-  respawnTimer: number;
-  userAttackedDamage?: number;
-  monsterAttackedDamage?: number;
-}
-
 type GameAction =
   | { type: "TICK"; deltaMs: number }
   | { type: "SET_FIGHTING"; value: boolean }
@@ -73,7 +60,6 @@ function processTick(state: GameState, deltaMs: number): GameState {
   let userAttacked = undefined;
   let monsterAttacked = undefined;
 
-  // Handle respawn countdown
   if (respawnTimer > 0) {
     respawnTimer -= deltaMs;
     if (respawnTimer <= 0) {
@@ -87,14 +73,6 @@ function processTick(state: GameState, deltaMs: number): GameState {
       userAttackedDamage: userAttacked,
       monsterAttackedDamage: monsterAttacked,
     };
-  }
-
-  function calculateDamageDealt({ from, to }: Demage) {
-    return Math.floor(Math.random() * (to - from + 1)) + from;
-  }
-
-  function healthAfterAttack(health: number, damage: number) {
-    return Math.max(0, health - damage);
   }
 
   if (user.health > 0 && monster.health > 0) {
@@ -133,7 +111,6 @@ function processTick(state: GameState, deltaMs: number): GameState {
       }
     }
 
-    // Monster attacks user (only if monster still alive)
     if (monster.health > 0 && monsterAttackTimer >= monster.attackSpeed) {
       monsterAttackTimer -= monster.attackSpeed;
       const damageDealt = calculateDamageDealt(monster.damage);
@@ -141,7 +118,6 @@ function processTick(state: GameState, deltaMs: number): GameState {
       user = { ...user, health: userNewHealth };
       monsterAttacked = damageDealt;
 
-      // User died?
       if (userNewHealth <= 0) {
         return {
           ...state,
