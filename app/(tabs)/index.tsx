@@ -1,3 +1,4 @@
+import { FloatingDamageContainer } from "@/components/FloatingDamageContainer";
 import { useAttackAnimations } from "@/hooks/useAttackAnimations";
 import { Demage, Monster, User } from "@/types/game";
 import React, { useCallback, useEffect, useReducer, useRef } from "react";
@@ -46,6 +47,8 @@ interface GameState {
   userAttackTimer: number;
   monsterAttackTimer: number;
   respawnTimer: number;
+  userAttackedDamage?: number;
+  monsterAttackedDamage?: number;
 }
 
 type GameAction =
@@ -60,19 +63,15 @@ const createInitialState = (): GameState => ({
   userAttackTimer: 0,
   monsterAttackTimer: 0,
   respawnTimer: 0,
+  userAttackedDamage: undefined,
+  monsterAttackedDamage: undefined,
 });
 
-interface TickResult {
-  state: GameState;
-  userAttacked: boolean;
-  monsterAttacked: boolean;
-}
-
-function processTick(state: GameState, deltaMs: number): TickResult {
+function processTick(state: GameState, deltaMs: number): GameState {
   let { user, monster, userAttackTimer, monsterAttackTimer, respawnTimer } =
     state;
-  let userAttacked = false;
-  let monsterAttacked = false;
+  let userAttacked = undefined;
+  let monsterAttacked = undefined;
 
   // Handle respawn countdown
   if (respawnTimer > 0) {
@@ -82,16 +81,20 @@ function processTick(state: GameState, deltaMs: number): TickResult {
       monster = createMonster(user.level);
     }
     return {
-      state: { ...state, respawnTimer, monster },
-      userAttacked: false,
-      monsterAttacked: false,
+      ...state,
+      respawnTimer,
+      monster,
+      userAttackedDamage: userAttacked,
+      monsterAttackedDamage: monsterAttacked,
     };
   }
 
-  function healthAfterAttack(health: number, damage: Demage) {
-    const damageDealt =
-      Math.floor(Math.random() * (damage.to - damage.from + 1)) + damage.from;
-    return Math.max(0, health - damageDealt);
+  function calculateDamageDealt({ from, to }: Demage) {
+    return Math.floor(Math.random() * (to - from + 1)) + from;
+  }
+
+  function healthAfterAttack(health: number, damage: number) {
+    return Math.max(0, health - damage);
   }
 
   if (user.health > 0 && monster.health > 0) {
@@ -100,11 +103,12 @@ function processTick(state: GameState, deltaMs: number): TickResult {
 
     if (userAttackTimer >= user.attackSpeed) {
       userAttackTimer -= user.attackSpeed;
-      const newMonsterHealth = healthAfterAttack(monster.health, user.damage);
-      monster = { ...monster, health: newMonsterHealth };
-      userAttacked = true;
+      const damageDealt = calculateDamageDealt(user.damage);
+      const monsterNewHealth = healthAfterAttack(monster.health, damageDealt);
+      monster = { ...monster, health: monsterNewHealth };
+      userAttacked = damageDealt;
 
-      if (newMonsterHealth <= 0) {
+      if (monsterNewHealth <= 0) {
         const expGain = 20;
         const newExp = user.experience + expGain;
 
@@ -132,40 +136,37 @@ function processTick(state: GameState, deltaMs: number): TickResult {
     // Monster attacks user (only if monster still alive)
     if (monster.health > 0 && monsterAttackTimer >= monster.attackSpeed) {
       monsterAttackTimer -= monster.attackSpeed;
-      const newUserHealth = healthAfterAttack(user.health, monster.damage);
-      user = { ...user, health: newUserHealth };
-      monsterAttacked = true;
+      const damageDealt = calculateDamageDealt(monster.damage);
+      const userNewHealth = healthAfterAttack(user.health, damageDealt);
+      user = { ...user, health: userNewHealth };
+      monsterAttacked = damageDealt;
 
       // User died?
-      if (newUserHealth <= 0) {
+      if (userNewHealth <= 0) {
         return {
-          state: {
-            ...state,
-            user,
-            monster,
-            isFighting: false,
-            userAttackTimer: 0,
-            monsterAttackTimer: 0,
-            respawnTimer: 0,
-          },
-          userAttacked,
-          monsterAttacked,
+          ...state,
+          user,
+          monster,
+          isFighting: false,
+          userAttackTimer: 0,
+          monsterAttackTimer: 0,
+          respawnTimer: 0,
+          userAttackedDamage: userAttacked,
+          monsterAttackedDamage: monsterAttacked,
         };
       }
     }
   }
 
   return {
-    state: {
-      ...state,
-      user,
-      monster,
-      userAttackTimer,
-      monsterAttackTimer,
-      respawnTimer,
-    },
-    userAttacked,
-    monsterAttacked,
+    ...state,
+    user,
+    monster,
+    userAttackTimer,
+    monsterAttackTimer,
+    respawnTimer,
+    userAttackedDamage: userAttacked,
+    monsterAttackedDamage: monsterAttacked,
   };
 }
 
@@ -173,8 +174,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case "TICK": {
       if (!state.isFighting) return state;
-      const { state: newState } = processTick(state, action.deltaMs);
-      return newState;
+      return processTick(state, action.deltaMs);
     }
 
     case "SET_FIGHTING":
@@ -190,10 +190,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
 export default function IdleFightScreen() {
   const [state, dispatch] = useReducer(gameReducer, null, createInitialState);
-  const { user, monster, isFighting, respawnTimer } = state;
+  const {
+    user,
+    monster,
+    isFighting,
+    respawnTimer,
+    userAttackedDamage: userAttacked,
+    monsterAttackedDamage: monsterAttacked,
+  } = state;
 
-  const { userAnimatedStyle, monsterAnimatedStyle, resetAnimations } =
-    useAttackAnimations(user.health, monster.health);
+  const {
+    userAnimatedStyle,
+    monsterAnimatedStyle,
+    monsterDamages,
+    userDamages,
+    removeMonsterDamage,
+    removeUserDamage,
+    resetAnimations,
+  } = useAttackAnimations(userAttacked, monsterAttacked);
 
   // Game loop refs
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -234,22 +248,30 @@ export default function IdleFightScreen() {
   const isMonsterDead = monster.health <= 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.monsterSection}>
         <Card style={styles.monsterCard}>
           <Card.Content style={styles.monsterContent}>
             <Text variant="headlineMedium" style={styles.monsterLabel}>
               🐉 {monster.name}
             </Text>
-            <Animated.View
-              style={[
-                styles.monsterPlaceholder,
-                monsterAnimatedStyle,
-                isMonsterDead && styles.deadPlaceholder,
-              ]}
-            >
-              <Text variant="displayLarge">{isMonsterDead ? "💀" : "👹"}</Text>
-            </Animated.View>
+            <View style={styles.monsterPlaceholderWrapper}>
+              <Animated.View
+                style={[
+                  styles.monsterPlaceholder,
+                  monsterAnimatedStyle,
+                  isMonsterDead && styles.deadPlaceholder,
+                ]}
+              >
+                <Text variant="displayLarge">
+                  {isMonsterDead ? "💀" : "👹"}
+                </Text>
+              </Animated.View>
+              <FloatingDamageContainer
+                damages={monsterDamages}
+                onDamageComplete={removeMonsterDamage}
+              />
+            </View>
             <View style={styles.healthBarContainer}>
               <ProgressBar
                 progress={Math.max(0, monster.health / monster.maxHealth)}
@@ -310,9 +332,17 @@ export default function IdleFightScreen() {
       <View style={styles.userSection}>
         <Card style={styles.userCard}>
           <Card.Content style={styles.userContent}>
-            <Animated.View style={[styles.userPlaceholder, userAnimatedStyle]}>
-              <Text variant="displayLarge">⚔️</Text>
-            </Animated.View>
+            <View style={styles.userPlaceholderWrapper}>
+              <Animated.View
+                style={[styles.userPlaceholder, userAnimatedStyle]}
+              >
+                <Text variant="displayLarge">⚔️</Text>
+              </Animated.View>
+              <FloatingDamageContainer
+                damages={userDamages}
+                onDamageComplete={removeUserDamage}
+              />
+            </View>
             <Text variant="headlineSmall" style={styles.userLabel}>
               Hero Lv.{user.level}
             </Text>
@@ -372,6 +402,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontWeight: "bold",
   },
+  monsterPlaceholderWrapper: {
+    position: "relative",
+    marginVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   monsterPlaceholder: {
     width: 150,
     height: 150,
@@ -379,7 +415,6 @@ const styles = StyleSheet.create({
     borderRadius: 75,
     justifyContent: "center",
     alignItems: "center",
-    marginVertical: 16,
     borderWidth: 3,
     borderColor: "#e94560",
   },
@@ -439,6 +474,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 24,
   },
+  userPlaceholderWrapper: {
+    position: "relative",
+    marginBottom: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   userPlaceholder: {
     width: 120,
     height: 120,
@@ -446,7 +487,6 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
     borderWidth: 3,
     borderColor: "#4a90e2",
   },
