@@ -1,4 +1,6 @@
 import { FloatingDamageContainer } from "@/components/FloatingDamageContainer";
+import { ExperienceBar } from "@/components/ui/ExperienceBar";
+import { HealthBar } from "@/components/ui/HealthBar";
 import { useAttackAnimations } from "@/hooks/useAttackAnimations";
 import { GameState, Monster, User } from "@/types/game";
 import {
@@ -8,7 +10,7 @@ import {
 } from "@/utils/calculations";
 import React, { useCallback, useEffect, useReducer, useRef } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Card, ProgressBar, Text } from "react-native-paper";
+import { Button, Card, Text } from "react-native-paper";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -248,22 +250,12 @@ export default function IdleFightScreen() {
                 onDamageComplete={removeMonsterDamage}
               />
             </View>
-            <View style={styles.healthBarContainer}>
-              <ProgressBar
-                progress={Math.max(0, monster.health / monster.maxHealth)}
-                color="#e94560"
-                style={styles.healthBar}
-              />
-              <Text variant="bodyMedium" style={styles.healthText}>
-                HP: {Math.max(0, Math.floor(monster.health))}/
-                {monster.maxHealth}
-                {respawnTimer > 0 &&
-                  ` (respawn in ${Math.ceil(respawnTimer / 1000)}s)`}
-              </Text>
-            </View>
+            <HealthBar health={monster.health} maxHealth={monster.maxHealth} />
             <Text variant="bodySmall" style={styles.statsText}>
               Attack: {monster.damage.from}-{monster.damage.to} | Speed:{" "}
               {monster.attackSpeed / 1000}s
+              {respawnTimer > 0 &&
+                ` (respawn in ${Math.ceil(respawnTimer / 1000)}s)`}
             </Text>
           </Card.Content>
         </Card>
@@ -322,26 +314,11 @@ export default function IdleFightScreen() {
             <Text variant="headlineSmall" style={styles.userLabel}>
               Hero Lv.{user.level}
             </Text>
-            <View style={styles.healthBarContainer}>
-              <ProgressBar
-                progress={Math.max(0, user.health / user.maxHealth)}
-                color="#4a90e2"
-                style={styles.healthBar}
-              />
-              <Text variant="bodyMedium" style={styles.healthText}>
-                HP: {Math.max(0, Math.floor(user.health))}/{user.maxHealth}
-              </Text>
-            </View>
-            <View style={styles.expBarContainer}>
-              <ProgressBar
-                progress={user.experience / user.experienceToNextLevel}
-                color="#ffd700"
-                style={styles.expBar}
-              />
-              <Text variant="bodySmall" style={styles.expText}>
-                EXP: {user.experience}/{user.experienceToNextLevel}
-              </Text>
-            </View>
+            <HealthBar health={user.health} maxHealth={user.maxHealth} />
+            <ExperienceBar
+              exp={user.experience}
+              maxExp={user.experienceToNextLevel}
+            />
             <Text variant="bodySmall" style={styles.statsText}>
               Attack: {user.damage.from}-{user.damage.to} | Speed:{" "}
               {user.attackSpeed / 1000}s
@@ -397,20 +374,6 @@ const styles = StyleSheet.create({
   deadPlaceholder: {
     opacity: 0.5,
     borderColor: "#666",
-  },
-  healthBarContainer: {
-    width: "100%",
-    paddingHorizontal: 16,
-    marginTop: 8,
-  },
-  healthBar: {
-    height: 8,
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  healthText: {
-    color: "#fff",
-    textAlign: "center",
   },
   statsText: {
     color: "#fff",
@@ -470,20 +433,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     marginBottom: 8,
-  },
-  expBarContainer: {
-    width: "100%",
-    paddingHorizontal: 16,
-    marginTop: 8,
-  },
-  expBar: {
-    height: 6,
-    borderRadius: 3,
-    marginBottom: 4,
-  },
-  expText: {
-    color: "#fff",
-    textAlign: "center",
-    opacity: 0.8,
   },
 });
