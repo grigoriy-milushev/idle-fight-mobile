@@ -1,6 +1,5 @@
 import { FloatingDamageContainer } from "@/components/FloatingDamageContainer";
-import { ExperienceBar } from "@/components/ui/ExperienceBar";
-import { HealthBar } from "@/components/ui/HealthBar";
+import { ProgressBarWithText } from "@/components/ui/ProgressBarWithText";
 import { monsters } from "@/constants/monsters";
 import { useAttackAnimations } from "@/hooks/useAttackAnimations";
 import { GameState, Monster, User } from "@/types/game";
@@ -289,7 +288,10 @@ export default function IdleFightScreen() {
             <Text variant="headlineSmall" style={styles.userLabel}>
               {monster.name}
             </Text>
-            <HealthBar health={monster.health} maxHealth={monster.maxHealth} />
+            <ProgressBarWithText
+              current={monster.health}
+              maxNumber={monster.maxHealth}
+            />
             <Text variant="bodySmall" style={styles.statsText}>
               Attack: {monster.damage.from}-{monster.damage.to} | Speed:{" "}
               {monster.attackSpeed / 1000}s
@@ -353,10 +355,16 @@ export default function IdleFightScreen() {
             <Text variant="headlineSmall" style={styles.userLabel}>
               Hero Lv.{user.level}
             </Text>
-            <HealthBar health={user.health} maxHealth={user.maxHealth} />
-            <ExperienceBar
-              exp={user.experience}
-              maxExp={user.experienceToNextLevel}
+            <ProgressBarWithText
+              current={user.health}
+              maxNumber={user.maxHealth}
+            />
+            <ProgressBarWithText
+              current={user.experience}
+              maxNumber={user.experienceToNextLevel}
+              label="EXP"
+              color="#ffd700"
+              size="small"
             />
             <Text variant="bodySmall" style={styles.statsText}>
               Attack: {user.damage.from}-{user.damage.to} | Speed:{" "}
