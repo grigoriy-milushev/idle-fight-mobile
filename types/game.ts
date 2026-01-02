@@ -1,10 +1,12 @@
 export interface Monster {
   id: string;
+  img: string;
   name: string;
   health: number;
   maxHealth: number;
   damage: Demage;
   attackSpeed: number;
+  expGain: number;
 }
 
 export interface User {
@@ -25,6 +27,7 @@ export type Demage = {
 export type GameState = {
   user: User;
   monster: Monster;
+  currentStage: number;
   isFighting: boolean;
   userAttackTimer: number;
   monsterAttackTimer: number;

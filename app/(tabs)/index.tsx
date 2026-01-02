@@ -1,6 +1,7 @@
 import { FloatingDamageContainer } from "@/components/FloatingDamageContainer";
 import { ExperienceBar } from "@/components/ui/ExperienceBar";
 import { HealthBar } from "@/components/ui/HealthBar";
+import { monsters } from "@/constants/monsters";
 import { useAttackAnimations } from "@/hooks/useAttackAnimations";
 import { GameState, Monster, User } from "@/types/game";
 import {
@@ -27,14 +28,32 @@ const createInitialUser = (): User => ({
   experienceToNextLevel: calculateExpToNextLevel(1),
 });
 
-const createMonster = (userLevel: number = 1): Monster => ({
-  id: `monster-${Date.now()}`,
-  name: "Goblin",
-  health: 50 + (userLevel - 1) * 10,
-  maxHealth: 50 + (userLevel - 1) * 10,
-  damage: { from: 1 + (userLevel - 1), to: 3 + (userLevel - 1) },
-  attackSpeed: 3000,
-});
+const createMonster = (stage: number = 1): Monster => {
+  // Calculate which cycle we're in (0 = first run, 1 = second run, etc.)
+  const cycle = Math.floor((stage - 1) / monsters.length);
+  // Get the monster index (0-9) using modulo
+  const monsterIndex = (stage - 1) % monsters.length;
+  // Get the base monster from the array
+  const baseMonster = monsters[monsterIndex];
+  // Apply buff multiplier based on cycle (1x for first cycle, 1.5x for second, 2x for third, etc.)
+  const buffMultiplier = 1 + cycle * 0.5;
+
+  return {
+    ...baseMonster,
+    id: `${baseMonster.id}-${Date.now()}`,
+    health: Math.floor(baseMonster.health * buffMultiplier),
+    maxHealth: Math.floor(baseMonster.maxHealth * buffMultiplier),
+    damage: {
+      from: Math.floor(baseMonster.damage.from * buffMultiplier),
+      to: Math.floor(baseMonster.damage.to * buffMultiplier),
+    },
+    attackSpeed: Math.max(
+      Math.floor(baseMonster.attackSpeed - cycle * 100),
+      500
+    ),
+    expGain: Math.floor(baseMonster.expGain * buffMultiplier),
+  };
+};
 
 // ============================================================================
 // GAME STATE & REDUCER (Battle Engine)
@@ -45,9 +64,10 @@ type GameAction =
   | { type: "SET_FIGHTING"; value: boolean }
   | { type: "RESTART" };
 
-const createInitialState = (): GameState => ({
-  user: createInitialUser(),
+const createInitialState = (user?: User): GameState => ({
+  user: user || createInitialUser(),
   monster: createMonster(1),
+  currentStage: 1,
   isFighting: true,
   userAttackTimer: 0,
   monsterAttackTimer: 0,
@@ -57,8 +77,14 @@ const createInitialState = (): GameState => ({
 });
 
 function processTick(state: GameState, deltaMs: number): GameState {
-  let { user, monster, userAttackTimer, monsterAttackTimer, respawnTimer } =
-    state;
+  let {
+    user,
+    monster,
+    currentStage,
+    userAttackTimer,
+    monsterAttackTimer,
+    respawnTimer,
+  } = state;
   let userAttacked = undefined;
   let monsterAttacked = undefined;
 
@@ -66,7 +92,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
     respawnTimer -= deltaMs;
     if (respawnTimer <= 0) {
       respawnTimer = 0;
-      monster = createMonster(user.level);
+      monster = createMonster(currentStage);
     }
     return {
       ...state,
@@ -89,7 +115,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
       userAttacked = damageDealt;
 
       if (monsterNewHealth <= 0) {
-        const expGain = 20;
+        const expGain = monster.expGain;
         const newExp = user.experience + expGain;
 
         if (newExp >= user.experienceToNextLevel) {
@@ -108,6 +134,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
           user = { ...user, experience: newExp };
         }
 
+        currentStage += 1;
         respawnTimer = RESPAWN_DELAY;
         monsterAttackTimer = 0;
       }
@@ -140,6 +167,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
     ...state,
     user,
     monster,
+    currentStage,
     userAttackTimer,
     monsterAttackTimer,
     respawnTimer,
@@ -159,7 +187,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, isFighting: action.value };
 
     case "RESTART":
-      return createInitialState();
+      return createInitialState({
+        ...state.user,
+        health: state.user.maxHealth,
+      });
 
     default:
       return state;
@@ -167,10 +198,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 }
 
 export default function IdleFightScreen() {
-  const [state, dispatch] = useReducer(gameReducer, null, createInitialState);
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    undefined,
+    createInitialState
+  );
   const {
     user,
     monster,
+    currentStage,
     isFighting,
     respawnTimer,
     userAttackedDamage: userAttacked,
@@ -230,8 +266,8 @@ export default function IdleFightScreen() {
       <View style={styles.monsterSection}>
         <Card style={styles.monsterCard}>
           <Card.Content style={styles.monsterContent}>
-            <Text variant="headlineMedium" style={styles.monsterLabel}>
-              🐉 {monster.name}
+            <Text variant="headlineSmall" style={styles.monsterLabel}>
+              Stage {currentStage}
             </Text>
             <View style={styles.monsterPlaceholderWrapper}>
               <Animated.View
@@ -242,7 +278,7 @@ export default function IdleFightScreen() {
                 ]}
               >
                 <Text variant="displayLarge">
-                  {isMonsterDead ? "💀" : "👹"}
+                  {isMonsterDead ? "💀" : monster.img}
                 </Text>
               </Animated.View>
               <FloatingDamageContainer
@@ -250,6 +286,9 @@ export default function IdleFightScreen() {
                 onDamageComplete={removeMonsterDamage}
               />
             </View>
+            <Text variant="headlineSmall" style={styles.userLabel}>
+              {monster.name}
+            </Text>
             <HealthBar health={monster.health} maxHealth={monster.maxHealth} />
             <Text variant="bodySmall" style={styles.statsText}>
               Attack: {monster.damage.from}-{monster.damage.to} | Speed:{" "}
