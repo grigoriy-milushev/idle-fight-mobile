@@ -261,7 +261,7 @@ export default function IdleFightScreen() {
   const isMonsterDead = monster.health <= 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.monsterSection}>
         <Card style={styles.monsterCard}>
           <Card.Content style={styles.monsterContent}>
