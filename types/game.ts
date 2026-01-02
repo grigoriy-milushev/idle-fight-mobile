@@ -17,6 +17,7 @@ export interface User {
   experience: number;
   level: number;
   experienceToNextLevel: number;
+  gold: number;
 }
 
 export type Demage = {

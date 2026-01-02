@@ -10,7 +10,7 @@ import {
 } from "@/utils/calculations";
 import React, { useCallback, useEffect, useReducer, useRef } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Card, Text } from "react-native-paper";
+import { Button, Card, Chip, Surface, Text } from "react-native-paper";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -25,6 +25,7 @@ const createInitialUser = (): User => ({
   experience: 0,
   level: 1,
   experienceToNextLevel: calculateExpToNextLevel(1),
+  gold: 0,
 });
 
 const createMonster = (stage: number = 1): Monster => {
@@ -262,6 +263,12 @@ export default function IdleFightScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <Surface style={styles.header} elevation={2}>
+        <View style={styles.headerSpacer} />
+        <Chip style={styles.goldChip} textStyle={styles.goldText} mode="flat">
+          💰 {user.gold}
+        </Chip>
+      </Surface>
       <View style={styles.monsterSection}>
         <Card style={styles.monsterCard}>
           <Card.Content style={styles.monsterContent}>
@@ -381,6 +388,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1a1a2e",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: "#16213e",
+    borderBottomWidth: 1,
+    borderBottomColor: "#0f3460",
+  },
+  headerSpacer: {
+    flex: 1,
+  },
+  goldChip: {
+    backgroundColor: "#0f3460",
+    borderColor: "#ffd700",
+    borderWidth: 1,
+  },
+  goldText: {
+    color: "#ffd700",
+    fontWeight: "bold",
   },
   monsterSection: {
     flex: 1,
