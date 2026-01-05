@@ -10,3 +10,8 @@ export function calculateDamageDealt({ from, to }: Demage) {
 export function healthAfterAttack(health: number, damage: number) {
   return Math.max(0, health - damage);
 }
+
+export function calculateGoldGain(maxGold: number): number {
+  const minGold = Math.floor(maxGold * 0.1);
+  return Math.floor(Math.random() * (maxGold - minGold + 1)) + minGold;
+}

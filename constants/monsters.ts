@@ -10,6 +10,7 @@ export const monsters: Monster[] = [
     damage: { from: 1, to: 3 },
     attackSpeed: 3000,
     expGain: 20,
+    maxGoldGain: 10,
   },
   {
     id: "orc",
@@ -20,6 +21,7 @@ export const monsters: Monster[] = [
     damage: { from: 3, to: 6 },
     attackSpeed: 2800,
     expGain: 35,
+    maxGoldGain: 20,
   },
   {
     id: "troll",
@@ -30,6 +32,7 @@ export const monsters: Monster[] = [
     damage: { from: 5, to: 10 },
     attackSpeed: 2600,
     expGain: 50,
+    maxGoldGain: 30,
   },
   {
     id: "ogre",
@@ -40,6 +43,7 @@ export const monsters: Monster[] = [
     damage: { from: 8, to: 15 },
     attackSpeed: 2400,
     expGain: 70,
+    maxGoldGain: 40,
   },
   {
     id: "demon",
@@ -50,6 +54,7 @@ export const monsters: Monster[] = [
     damage: { from: 12, to: 20 },
     attackSpeed: 2200,
     expGain: 95,
+    maxGoldGain: 50,
   },
   {
     id: "wraith",
@@ -60,6 +65,7 @@ export const monsters: Monster[] = [
     damage: { from: 16, to: 28 },
     attackSpeed: 2000,
     expGain: 125,
+    maxGoldGain: 60,
   },
   {
     id: "vampire",
@@ -70,6 +76,7 @@ export const monsters: Monster[] = [
     damage: { from: 22, to: 36 },
     attackSpeed: 1800,
     expGain: 160,
+    maxGoldGain: 70,
   },
   {
     id: "wizzard",
@@ -80,6 +87,7 @@ export const monsters: Monster[] = [
     damage: { from: 28, to: 45 },
     attackSpeed: 1600,
     expGain: 200,
+    maxGoldGain: 80,
   },
   {
     id: "hydra",
@@ -90,6 +98,7 @@ export const monsters: Monster[] = [
     damage: { from: 35, to: 55 },
     attackSpeed: 1400,
     expGain: 250,
+    maxGoldGain: 90,
   },
   {
     id: "dark-lord",
@@ -100,6 +109,7 @@ export const monsters: Monster[] = [
     damage: { from: 50, to: 80 },
     attackSpeed: 1200,
     expGain: 500,
+    maxGoldGain: 100,
   },
 ];
 

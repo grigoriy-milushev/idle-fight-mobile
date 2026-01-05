@@ -7,6 +7,7 @@ export interface Monster {
   damage: Demage;
   attackSpeed: number;
   expGain: number;
+  maxGoldGain: number;
 }
 
 export interface User {
@@ -35,4 +36,5 @@ export type GameState = {
   respawnTimer: number;
   userAttackedDamage?: number;
   monsterAttackedDamage?: number;
+  goldGained?: number;
 };

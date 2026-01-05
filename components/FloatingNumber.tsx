@@ -8,30 +8,34 @@ import Animated, {
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 
-const DAMAGE_DURATION = 1000;
+const FLOAT_DURATION = 1000;
 const FLOAT_DISTANCE = -60; // pixels upward
 
+export type FloatingNumberType = "damage" | "gold";
+
 /**
- * Component for rendering a single floating damage number.
+ * Component for rendering a single floating number.
  * Animates upward and fades out, then calls onComplete.
  */
-export function FloatingDamageNumber({
+export function FloatingNumber({
   value,
   horizontalOffset,
   onComplete,
+  type = "damage",
 }: {
   value: number;
   horizontalOffset: number;
   onComplete: () => void;
+  type?: FloatingNumberType;
 }) {
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
 
   useEffect(() => {
-    opacity.value = withTiming(0, { duration: DAMAGE_DURATION });
+    opacity.value = withTiming(0, { duration: FLOAT_DURATION });
     translateY.value = withTiming(
       FLOAT_DISTANCE,
-      { duration: DAMAGE_DURATION },
+      { duration: FLOAT_DURATION },
       () => scheduleOnRN(onComplete)
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,7 +51,9 @@ export function FloatingDamageNumber({
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
-      <Text style={styles.damageText}>-{value}</Text>
+      <Text style={type === "gold" ? styles.goldText : styles.damageText}>
+        {type === "gold" ? `+${value} Gold` : `-${value}`}
+      </Text>
     </Animated.View>
   );
 }
@@ -62,6 +68,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#ff4444",
+    textShadowColor: "#000",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  goldText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#ffd700",
     textShadowColor: "#000",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,

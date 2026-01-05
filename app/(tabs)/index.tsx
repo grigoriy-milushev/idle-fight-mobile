@@ -1,11 +1,12 @@
-import { FloatingDamageContainer } from "@/components/FloatingDamageContainer";
+import { FloatingNumbersContainer } from "@/components/FloatingNumbersContainer";
 import { ProgressBarWithText } from "@/components/ui/ProgressBarWithText";
 import { monsters } from "@/constants/monsters";
-import { useAttackAnimations } from "@/hooks/useAttackAnimations";
+import { useFightAnimations } from "@/hooks/useFightAnimations";
 import { GameState, Monster, User } from "@/types/game";
 import {
   calculateDamageDealt,
   calculateExpToNextLevel,
+  calculateGoldGain,
   healthAfterAttack,
 } from "@/utils/calculations";
 import React, { useCallback, useEffect, useReducer, useRef } from "react";
@@ -74,6 +75,7 @@ const createInitialState = (user?: User): GameState => ({
   respawnTimer: 0,
   userAttackedDamage: undefined,
   monsterAttackedDamage: undefined,
+  goldGained: undefined,
 });
 
 function processTick(state: GameState, deltaMs: number): GameState {
@@ -87,6 +89,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
   } = state;
   let userAttacked = undefined;
   let monsterAttacked = undefined;
+  let goldGained = undefined;
 
   if (respawnTimer > 0) {
     respawnTimer -= deltaMs;
@@ -98,8 +101,10 @@ function processTick(state: GameState, deltaMs: number): GameState {
       ...state,
       respawnTimer,
       monster,
+      // TODO: FIX naming and passiung undefind
       userAttackedDamage: userAttacked,
       monsterAttackedDamage: monsterAttacked,
+      goldGained,
     };
   }
 
@@ -134,6 +139,8 @@ function processTick(state: GameState, deltaMs: number): GameState {
           user = { ...user, experience: newExp };
         }
 
+        goldGained = calculateGoldGain(monster.maxGoldGain);
+        user.gold += goldGained;
         currentStage += 1;
         respawnTimer = RESPAWN_DELAY;
         monsterAttackTimer = 0;
@@ -158,6 +165,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
           respawnTimer: 0,
           userAttackedDamage: userAttacked,
           monsterAttackedDamage: monsterAttacked,
+          goldGained,
         };
       }
     }
@@ -173,6 +181,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
     respawnTimer,
     userAttackedDamage: userAttacked,
     monsterAttackedDamage: monsterAttacked,
+    goldGained,
   };
 }
 
@@ -211,17 +220,18 @@ export default function IdleFightScreen() {
     respawnTimer,
     userAttackedDamage: userAttacked,
     monsterAttackedDamage: monsterAttacked,
+    goldGained,
   } = state;
 
   const {
     userAnimatedStyle,
     monsterAnimatedStyle,
-    monsterDamages,
-    userDamages,
+    monsterNumbers,
+    userNumbers,
     removeMonsterDamage,
     removeUserDamage,
     resetAnimations,
-  } = useAttackAnimations(userAttacked, monsterAttacked);
+  } = useFightAnimations(userAttacked, monsterAttacked, goldGained);
 
   // Game loop refs
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -287,9 +297,9 @@ export default function IdleFightScreen() {
                   {isMonsterDead ? "💀" : monster.img}
                 </Text>
               </Animated.View>
-              <FloatingDamageContainer
-                damages={monsterDamages}
-                onDamageComplete={removeMonsterDamage}
+              <FloatingNumbersContainer
+                numbers={monsterNumbers}
+                onFloatingComplete={removeMonsterDamage}
               />
             </View>
             <Text variant="headlineSmall" style={styles.userLabel}>
@@ -354,9 +364,9 @@ export default function IdleFightScreen() {
               >
                 <Text variant="displayLarge">⚔️</Text>
               </Animated.View>
-              <FloatingDamageContainer
-                damages={userDamages}
-                onDamageComplete={removeUserDamage}
+              <FloatingNumbersContainer
+                numbers={userNumbers}
+                onFloatingComplete={removeUserDamage}
               />
             </View>
             <Text variant="headlineSmall" style={styles.userLabel}>
