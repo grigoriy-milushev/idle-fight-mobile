@@ -1,13 +1,13 @@
-import React from "react";
-import { StyleSheet, View } from "react-native";
-import { FloatingNumber, FloatingNumberType } from "./FloatingNumber";
+import React from 'react'
+import {StyleSheet, View} from 'react-native'
+import {FloatingNumber, FloatingNumberType} from './FloatingNumber'
 
 export type FloatingNumbers = {
-  id: string;
-  value: number;
-  horizontalOffset: number;
-  type?: FloatingNumberType;
-}[];
+  id: string
+  value: number
+  horizontalOffset: number
+  type?: FloatingNumberType
+}[]
 
 /**
  * Container component that renders multiple floating damage numbers.
@@ -15,10 +15,10 @@ export type FloatingNumbers = {
  */
 export function FloatingNumbersContainer({
   numbers,
-  onFloatingComplete,
+  onFloatingComplete
 }: {
-  numbers: FloatingNumbers;
-  onFloatingComplete: (id: string) => void;
+  numbers: FloatingNumbers
+  onFloatingComplete: (id: string) => void
 }) {
   return (
     <View style={styles.container} pointerEvents="none">
@@ -32,17 +32,17 @@ export function FloatingNumbersContainer({
         />
       ))}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
+})

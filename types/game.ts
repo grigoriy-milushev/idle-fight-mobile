@@ -1,40 +1,40 @@
 export interface Monster {
-  id: string;
-  img: string;
-  name: string;
-  health: number;
-  maxHealth: number;
-  damage: Demage;
-  attackSpeed: number;
-  expGain: number;
-  maxGoldGain: number;
+  id: string
+  img: string
+  name: string
+  health: number
+  maxHealth: number
+  damage: Demage
+  attackSpeed: number
+  expGain: number
+  maxGoldGain: number
 }
 
 export interface User {
-  health: number;
-  maxHealth: number;
-  damage: Demage;
-  attackSpeed: number;
-  experience: number;
-  level: number;
-  experienceToNextLevel: number;
-  gold: number;
+  health: number
+  maxHealth: number
+  damage: Demage
+  attackSpeed: number
+  experience: number
+  level: number
+  experienceToNextLevel: number
+  gold: number
 }
 
 export type Demage = {
-  from: number;
-  to: number;
-};
+  from: number
+  to: number
+}
 
 export type GameState = {
-  user: User;
-  monster: Monster;
-  currentStage: number;
-  isFighting: boolean;
-  userAttackTimer: number;
-  monsterAttackTimer: number;
-  respawnTimer: number;
-  userAttackedDamage?: number;
-  monsterAttackedDamage?: number;
-  goldGained?: number;
-};
+  user: User
+  monster: Monster
+  currentStage: number
+  isFighting: boolean
+  userAttackTimer: number
+  monsterAttackTimer: number
+  respawnTimer: number
+  userAttackedDamage?: number
+  monsterAttackedDamage?: number
+  goldGained?: number
+}
