@@ -26,8 +26,7 @@ const createInitialUser = (): User => ({
 
 const createMonster = (stage: number = 1): Monster => {
   const cycle = Math.floor((stage - 1) / monsters.length)
-  const monsterIndex = (stage - 1) % monsters.length
-  const baseMonster = monsters[monsterIndex]
+  const baseMonster = monsters[(stage - 1) % monsters.length]
   const buffMultiplier = 1 + cycle * 0.5
 
   return {
@@ -40,7 +39,8 @@ const createMonster = (stage: number = 1): Monster => {
       to: Math.floor(baseMonster.damage.to * buffMultiplier)
     },
     attackSpeed: Math.max(Math.floor(baseMonster.attackSpeed - cycle * 100), 500),
-    expGain: Math.floor(baseMonster.expGain * buffMultiplier)
+    expGain: Math.floor(baseMonster.expGain * buffMultiplier),
+    goldGain: Math.floor(baseMonster.goldGain * buffMultiplier)
   }
 }
 
@@ -58,8 +58,8 @@ const createInitialState = (user?: User): GameState => ({
   userAttackTimer: 0,
   monsterAttackTimer: 0,
   respawnTimer: 0,
-  userAttackedDamage: undefined,
-  monsterAttackedDamage: undefined,
+  userAttacked: undefined,
+  monsterAttacked: undefined,
   goldGained: undefined
 })
 
@@ -75,14 +75,11 @@ function processTick(state: GameState, deltaMs: number): GameState {
       respawnTimer = 0
       monster = createMonster(currentStage)
     }
+
     return {
       ...state,
       respawnTimer,
-      monster,
-      // TODO: FIX naming and passiung undefind
-      userAttackedDamage: userAttacked,
-      monsterAttackedDamage: monsterAttacked,
-      goldGained
+      monster
     }
   }
 
@@ -117,7 +114,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
           user = {...user, experience: newExp}
         }
 
-        goldGained = calculateGoldGain(monster.maxGoldGain)
+        goldGained = calculateGoldGain(monster.goldGain)
         user.gold += goldGained
         currentStage += 1
         respawnTimer = RESPAWN_DELAY
@@ -141,9 +138,9 @@ function processTick(state: GameState, deltaMs: number): GameState {
           userAttackTimer: 0,
           monsterAttackTimer: 0,
           respawnTimer: 0,
-          userAttackedDamage: userAttacked,
-          monsterAttackedDamage: monsterAttacked,
-          goldGained
+          userAttacked,
+          monsterAttacked,
+          goldGained: undefined
         }
       }
     }
@@ -157,8 +154,8 @@ function processTick(state: GameState, deltaMs: number): GameState {
     userAttackTimer,
     monsterAttackTimer,
     respawnTimer,
-    userAttackedDamage: userAttacked,
-    monsterAttackedDamage: monsterAttacked,
+    userAttacked,
+    monsterAttacked,
     goldGained
   }
 }
@@ -186,16 +183,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
 export default function IdleFightScreen() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialState)
-  const {
-    user,
-    monster,
-    currentStage,
-    isFighting,
-    respawnTimer,
-    userAttackedDamage: userAttacked,
-    monsterAttackedDamage: monsterAttacked,
-    goldGained
-  } = state
+  const {user, monster, currentStage, isFighting, respawnTimer, userAttacked, monsterAttacked, goldGained} = state
 
   const {
     userAnimatedStyle,
