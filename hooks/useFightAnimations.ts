@@ -10,20 +10,12 @@ const MAX_FLOATING_NUMBERS = 4
  * Handles shake animations and floating number display.
  */
 export function useFightAnimations(userAttacked?: number, monsterAttacked?: number, goldGained?: number) {
-  const userShakeX = useSharedValue(0)
-  const monsterShakeX = useSharedValue(0)
+  const {sharedValue: userShakeX, animatedStyle: userAnimatedStyle} = useShakeAnimationStyle()
+  const {sharedValue: monsterShakeX, animatedStyle: monsterAnimatedStyle} = useShakeAnimationStyle()
 
   const [monsterNumbers, setMonsterNumbers] = useState<FloatingNumbers>([])
   const [userNumbers, setUserNumbers] = useState<FloatingNumbers>([])
   const nextIdRef = useRef(0)
-
-  const userAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{translateX: userShakeX.value}]
-  }))
-
-  const monsterAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{translateX: monsterShakeX.value}]
-  }))
 
   const triggerShake = useCallback(
     (target: 'user' | 'opponent') => {
@@ -47,9 +39,8 @@ export function useFightAnimations(userAttacked?: number, monsterAttacked?: numb
       const setFloatingNumbers = target === 'opponent' ? setMonsterNumbers : setUserNumbers
       setFloatingNumbers((prev) => {
         const updated = [...prev, {id, value, horizontalOffset, type}]
-        if (updated.length > MAX_FLOATING_NUMBERS) {
-          return updated.slice(-MAX_FLOATING_NUMBERS)
-        }
+        if (updated.length > MAX_FLOATING_NUMBERS) return updated.slice(-MAX_FLOATING_NUMBERS)
+
         return updated
       })
     },
@@ -89,4 +80,11 @@ export function useFightAnimations(userAttacked?: number, monsterAttacked?: numb
       setUserNumbers([])
     }, [userShakeX, monsterShakeX])
   }
+}
+
+function useShakeAnimationStyle(initialValue: number = 0) {
+  const sharedValue = useSharedValue(initialValue)
+  const animatedStyle = useAnimatedStyle(() => ({transform: [{translateX: sharedValue.value}]}))
+
+  return {sharedValue, animatedStyle}
 }
