@@ -247,7 +247,7 @@ export default function IdleFightScreen() {
             <Text variant="headlineSmall" style={styles.monsterLabel}>
               Stage {currentStage}
             </Text>
-            <View style={styles.monsterPlaceholderWrapper}>
+            <View style={styles.avatarWrapper}>
               <Animated.View
                 style={[styles.monsterPlaceholder, monsterAnimatedStyle, isMonsterDead && styles.deadPlaceholder]}
               >
@@ -301,7 +301,7 @@ export default function IdleFightScreen() {
       <View style={styles.userSection}>
         <Card style={styles.userCard}>
           <Card.Content style={styles.userContent}>
-            <View style={styles.userPlaceholderWrapper}>
+            <View style={styles.avatarWrapper}>
               <Animated.View style={[styles.userPlaceholder, userAnimatedStyle]}>
                 <Text variant="displayLarge">⚔️</Text>
               </Animated.View>
@@ -356,9 +356,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
   monsterSection: {
-    flex: 1,
     justifyContent: 'flex-start',
-    paddingTop: 20,
+    paddingTop: 10,
     paddingHorizontal: 16
   },
   monsterCard: {
@@ -368,18 +367,12 @@ const styles = StyleSheet.create({
   },
   monsterContent: {
     alignItems: 'center',
-    paddingVertical: 24
+    paddingVertical: 16
   },
   monsterLabel: {
     color: '#fff',
     marginBottom: 16,
     fontWeight: 'bold'
-  },
-  monsterPlaceholderWrapper: {
-    position: 'relative',
-    marginVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center'
   },
   monsterPlaceholder: {
     width: 150,
@@ -401,10 +394,9 @@ const styles = StyleSheet.create({
     marginTop: 4
   },
   middleSection: {
-    flex: 0.3,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16
+    padding: 16
   },
   gameOverContainer: {
     alignItems: 'center',
@@ -419,9 +411,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24
   },
   userSection: {
-    flex: 1,
     justifyContent: 'flex-end',
-    paddingBottom: 20,
+    paddingBottom: 10,
     paddingHorizontal: 16
   },
   userCard: {
@@ -431,9 +422,9 @@ const styles = StyleSheet.create({
   },
   userContent: {
     alignItems: 'center',
-    paddingVertical: 24
+    paddingVertical: 16
   },
-  userPlaceholderWrapper: {
+  avatarWrapper: {
     position: 'relative',
     marginBottom: 16,
     alignItems: 'center',
