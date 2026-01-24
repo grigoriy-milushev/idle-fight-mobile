@@ -1,17 +1,38 @@
-import {FloatingNumbersContainer} from '@/components/FloatingNumbersContainer'
-import {ProgressBarWithText} from '@/components/ui/ProgressBarWithText'
-import {monsters} from '@/constants/monsters'
-import {useFightAnimations} from '@/hooks/useFightAnimations'
-import {GameState, Monster, User} from '@/types/game'
-import {calculateDamageDealt, calculateExpToNextLevel, calculateGoldGain, healthAfterAttack} from '@/utils/calculations'
-import React, {useCallback, useEffect, useReducer, useRef} from 'react'
-import {StyleSheet, View} from 'react-native'
-import {Button, Card, Chip, Surface, Text} from 'react-native-paper'
+import { FloatingNumbersContainer } from '@/components/FloatingNumbersContainer'
+import { StatsModal, StatsSection } from '@/components/StatsModal'
+import { ProgressBarWithText } from '@/components/ui/ProgressBarWithText'
+import { monsters } from '@/constants/monsters'
+import { useFightAnimations } from '@/hooks/useFightAnimations'
+import { GameState, Monster, User } from '@/types/game'
+import { calculateDamageDealt, calculateExpToNextLevel, calculateGoldGain, healthAfterAttack } from '@/utils/calculations'
+import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { StyleSheet, View } from 'react-native'
+import { Button, Card, Chip, IconButton, Surface, Text } from 'react-native-paper'
 import Animated from 'react-native-reanimated'
-import {SafeAreaView} from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 const TICK_RATE = 100 // ms per tick (~10 ticks/sec)
 const RESPAWN_DELAY = 2000 // ms
+
+const createHeroStatsSections = (user: User): StatsSection[] => [
+  {
+    stats: [
+      { label: 'Level', value: user.level },
+      { label: 'Attack Damage', value: `${user.damage.from} - ${user.damage.to}` },
+      { label: 'Attack Speed', value: `${user.attackSpeed / 1000}s` }
+    ]
+  },
+  {
+    title: 'Future Stats (Coming Soon)',
+    disabled: true,
+    stats: [
+      { label: 'Strength', value: '-' },
+      { label: 'Agility', value: '-' },
+      { label: 'Vitality', value: '-' },
+      { label: 'Intelligence', value: '-' }
+    ]
+  }
+]
 
 const createInitialUser = (): User => ({
   health: 100,
@@ -184,6 +205,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 export default function IdleFightScreen() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialState)
   const {user, monster, currentStage, isFighting, respawnTimer, userAttacked, monsterAttacked, goldGained} = state
+  const [statsModalVisible, setStatsModalVisible] = useState(false)
 
   const {
     userAnimatedStyle,
@@ -232,6 +254,8 @@ export default function IdleFightScreen() {
   }, [resetAnimations])
 
   const isMonsterDead = monster.health <= 0
+
+  const heroStatsSections = useMemo(() => createHeroStatsSections(user), [user])
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -301,6 +325,13 @@ export default function IdleFightScreen() {
       <View style={styles.userSection}>
         <Card style={styles.userCard}>
           <Card.Content style={styles.userContent}>
+            <IconButton
+              icon="account-details"
+              iconColor="#4a90e2"
+              size={24}
+              onPress={() => setStatsModalVisible(true)}
+              style={styles.statsIconButton}
+            />
             <View style={styles.avatarWrapper}>
               <Animated.View style={[styles.userPlaceholder, userAnimatedStyle]}>
                 <Text variant="displayLarge">⚔️</Text>
@@ -324,6 +355,13 @@ export default function IdleFightScreen() {
           </Card.Content>
         </Card>
       </View>
+
+      <StatsModal
+        visible={statsModalVisible}
+        onDismiss={() => setStatsModalVisible(false)}
+        title="Hero Stats"
+        sections={heroStatsSections}
+      />
     </SafeAreaView>
   )
 }
@@ -444,5 +482,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     marginBottom: 8
+  },
+  statsIconButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    margin: 0
   }
 })
