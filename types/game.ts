@@ -44,3 +44,62 @@ export type GameState = {
   monsterAttacked?: number
   goldGained?: number
 }
+
+// ============================================================================
+// INVENTORY SYSTEM
+// ============================================================================
+
+export type ItemRarity = 'common' | 'magic' | 'rare' | 'legendary'
+
+export type EquipmentSlotType =
+  | 'helmet'
+  | 'armor'
+  | 'gloves'
+  | 'boots'
+  | 'weapon'
+  | 'offhand'
+  | 'ring1'
+  | 'ring2'
+  | 'amulet'
+
+export interface ItemStats {
+  damage?: Demage
+  armor?: number
+  maxHealth?: number
+  strength?: number
+  agility?: number
+  vitality?: number
+  attackSpeed?: number // bonus/reduction in ms
+}
+
+export interface ItemDefinition {
+  id: string
+  name: string
+  icon: string
+  slot: EquipmentSlotType
+  rarity: ItemRarity
+  stats: ItemStats
+  description?: string
+}
+
+export interface InventoryItem {
+  instanceId: string // unique per item instance
+  definitionId: string
+}
+
+export interface EquippedItems {
+  helmet: InventoryItem | null
+  armor: InventoryItem | null
+  gloves: InventoryItem | null
+  boots: InventoryItem | null
+  weapon: InventoryItem | null
+  offhand: InventoryItem | null
+  ring1: InventoryItem | null
+  ring2: InventoryItem | null
+  amulet: InventoryItem | null
+}
+
+export interface Inventory {
+  items: InventoryItem[]
+  equipped: EquippedItems
+}
