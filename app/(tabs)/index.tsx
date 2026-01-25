@@ -1,49 +1,92 @@
-import { FloatingNumbersContainer } from '@/components/FloatingNumbersContainer'
-import { StatsModal, StatsSection } from '@/components/StatsModal'
-import { ProgressBarWithText } from '@/components/ui/ProgressBarWithText'
-import { monsters } from '@/constants/monsters'
-import { useFightAnimations } from '@/hooks/useFightAnimations'
-import { GameState, Monster, User } from '@/types/game'
-import { calculateDamageDealt, calculateExpToNextLevel, calculateGoldGain, healthAfterAttack } from '@/utils/calculations'
-import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
-import { Button, Card, Chip, IconButton, Surface, Text } from 'react-native-paper'
+import {FloatingNumbersContainer} from '@/components/FloatingNumbersContainer'
+import {StatsModal, StatsSection} from '@/components/StatsModal'
+import {ProgressBarWithText} from '@/components/ui/ProgressBarWithText'
+import {monsters} from '@/constants/monsters'
+import {useFightAnimations} from '@/hooks/useFightAnimations'
+import {GameState, Monster, StatType, User} from '@/types/game'
+import {
+  BASE_ATTACK_SPEED,
+  BASE_DAMAGE,
+  BASE_MAX_HEALTH,
+  calculateDamageDealt,
+  calculateEffectiveStats,
+  calculateExpToNextLevel,
+  calculateGoldGain,
+  healthAfterAttack
+} from '@/utils/calculations'
+import React, {useCallback, useEffect, useMemo, useReducer, useRef, useState} from 'react'
+import {StyleSheet, View} from 'react-native'
+import {Button, Card, Chip, IconButton, Surface, Text} from 'react-native-paper'
 import Animated from 'react-native-reanimated'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import {SafeAreaView} from 'react-native-safe-area-context'
 
 const TICK_RATE = 100 // ms per tick (~10 ticks/sec)
 const RESPAWN_DELAY = 2000 // ms
+const STAT_POINTS_PER_LEVEL = 3
 
 const createHeroStatsSections = (user: User): StatsSection[] => [
   {
     stats: [
-      { label: 'Level', value: user.level },
-      { label: 'Attack Damage', value: `${user.damage.from} - ${user.damage.to}` },
-      { label: 'Attack Speed', value: `${user.attackSpeed / 1000}s` }
+      {label: 'Level', value: user.level},
+      {label: 'Attack Damage', value: `${user.damage.from} - ${user.damage.to}`},
+      {label: 'Attack Speed', value: `${user.attackSpeed / 1000}s`},
+      {label: 'Max Health', value: user.maxHealth}
     ]
   },
   {
-    title: 'Future Stats (Coming Soon)',
-    disabled: true,
+    title: 'Attributes',
+    allocatable: true,
     stats: [
-      { label: 'Strength', value: '-' },
-      { label: 'Agility', value: '-' },
-      { label: 'Vitality', value: '-' },
-      { label: 'Intelligence', value: '-' }
+      {
+        label: 'Strength',
+        value: user.strength,
+        statKey: 'strength',
+        hint: 'Every 3 points: +1 damage'
+      },
+      {
+        label: 'Agility',
+        value: user.agility,
+        statKey: 'agility',
+        hint: 'Every 3 points: +0.05s attack speed'
+      },
+      {
+        label: 'Vitality',
+        value: user.vitality,
+        statKey: 'vitality',
+        hint: 'Every 1 point: +1 max health'
+      }
     ]
   }
 ]
 
-const createInitialUser = (): User => ({
-  health: 100,
-  maxHealth: 100,
-  damage: {from: 1, to: 3},
-  attackSpeed: 1000,
-  experience: 0,
-  level: 1,
-  experienceToNextLevel: calculateExpToNextLevel(1),
-  gold: 0
-})
+const createInitialUser = (): User => {
+  const baseUser = {
+    strength: 0,
+    agility: 0,
+    vitality: 0,
+    statPoints: 0,
+    experience: 0,
+    level: 1,
+    experienceToNextLevel: calculateExpToNextLevel(1),
+    gold: 0,
+    damage: {
+      from: BASE_DAMAGE.from + 20,
+      to: BASE_DAMAGE.to + 20
+    },
+    attackSpeed: BASE_ATTACK_SPEED,
+    maxHealth: BASE_MAX_HEALTH
+  }
+
+  const effectiveStats = calculateEffectiveStats(baseUser as User)
+
+  return {
+    ...baseUser,
+    health: effectiveStats.maxHealth,
+    maxHealth: effectiveStats.maxHealth,
+    damage: effectiveStats.damage,
+    attackSpeed: effectiveStats.attackSpeed
+  }
+}
 
 const createMonster = (stage: number = 1): Monster => {
   const cycle = Math.floor((stage - 1) / monsters.length)
@@ -69,7 +112,11 @@ const createMonster = (stage: number = 1): Monster => {
 // GAME STATE & REDUCER (Battle Engine)
 // ============================================================================
 
-type GameAction = {type: 'TICK'; deltaMs: number} | {type: 'SET_FIGHTING'; value: boolean} | {type: 'RESTART'}
+type GameAction =
+  | {type: 'TICK'; deltaMs: number}
+  | {type: 'SET_FIGHTING'; value: boolean}
+  | {type: 'RESTART'}
+  | {type: 'ALLOCATE_STAT'; stat: StatType}
 
 const createInitialState = (user?: User): GameState => ({
   user: user || createInitialUser(),
@@ -126,10 +173,8 @@ function processTick(state: GameState, deltaMs: number): GameState {
             experience: newExp - user.experienceToNextLevel,
             level: newLevel,
             experienceToNextLevel: calculateExpToNextLevel(newLevel),
-            maxHealth: user.maxHealth + 20,
-            health: user.maxHealth + 20,
-            damage: {from: user.damage.from + 2, to: user.damage.to + 2},
-            attackSpeed: Math.max(user.attackSpeed - 5, 300)
+            health: user.maxHealth,
+            statPoints: user.statPoints + STAT_POINTS_PER_LEVEL
           }
         } else {
           user = {...user, experience: newExp}
@@ -197,6 +242,32 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         health: state.user.maxHealth
       })
 
+    case 'ALLOCATE_STAT': {
+      if (state.user.statPoints <= 0) return state
+
+      const updatedUser = {
+        ...state.user,
+        [action.stat]: state.user[action.stat] + 1,
+        statPoints: state.user.statPoints - 1
+      }
+
+      const effectiveStats = calculateEffectiveStats(updatedUser)
+      const oldMaxHealth = state.user.maxHealth
+      const newMaxHealth = effectiveStats.maxHealth
+      const healthIncrease = newMaxHealth - oldMaxHealth
+
+      return {
+        ...state,
+        user: {
+          ...updatedUser,
+          damage: effectiveStats.damage,
+          attackSpeed: effectiveStats.attackSpeed,
+          maxHealth: newMaxHealth,
+          health: Math.min(updatedUser.health + healthIncrease, newMaxHealth)
+        }
+      }
+    }
+
     default:
       return state
   }
@@ -256,6 +327,10 @@ export default function IdleFightScreen() {
   const isMonsterDead = monster.health <= 0
 
   const heroStatsSections = useMemo(() => createHeroStatsSections(user), [user])
+
+  const handleAllocateStat = useCallback((stat: StatType) => {
+    dispatch({type: 'ALLOCATE_STAT', stat})
+  }, [])
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -361,6 +436,8 @@ export default function IdleFightScreen() {
         onDismiss={() => setStatsModalVisible(false)}
         title="Hero Stats"
         sections={heroStatsSections}
+        statPoints={user.statPoints}
+        onAllocateStat={handleAllocateStat}
       />
     </SafeAreaView>
   )

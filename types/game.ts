@@ -19,7 +19,13 @@ export interface User {
   level: number
   experienceToNextLevel: number
   gold: number
+  strength: number
+  agility: number
+  vitality: number
+  statPoints: number
 }
+
+export type StatType = 'strength' | 'agility' | 'vitality'
 
 export type Demage = {
   from: number
