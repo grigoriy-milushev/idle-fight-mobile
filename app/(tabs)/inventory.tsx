@@ -1,24 +1,18 @@
 import {EQUIPMENT_SLOTS, getItemDefinition, RARITY_COLORS} from '@/constants/items'
-import {EquippedItems, EquipmentSlotType, InventoryItem, ItemDefinition} from '@/types/game'
+import {EquipmentSlotType, EquippedItems, InventoryItem, ItemDefinition} from '@/types/game'
 import React, {useCallback, useMemo, useState} from 'react'
 import {Dimensions, Pressable, ScrollView, StyleSheet, View} from 'react-native'
 import {Button, Dialog, Portal, Surface, Text} from 'react-native-paper'
 import {SafeAreaView} from 'react-native-safe-area-context'
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
 const GRID_COLS = 5
 const GRID_ROWS = 6
+const MAX_INVENTORY_SIZE = GRID_COLS * GRID_ROWS
+
 const CELL_SIZE = 52
 const CELL_GAP = 4
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window')
-
-// ============================================================================
-// INITIAL TEST DATA
-// ============================================================================
 
 const createTestInventory = (): InventoryItem[] => [
   {instanceId: 'test-1', definitionId: 'rusty_sword'},
@@ -38,8 +32,6 @@ const createTestInventory = (): InventoryItem[] => [
   {instanceId: 'test-15', definitionId: 'swift_boots'}
 ]
 
-const MAX_INVENTORY_SIZE = GRID_COLS * GRID_ROWS
-
 const createEmptyEquipped = (): EquippedItems => ({
   helmet: null,
   armor: null,
@@ -52,31 +44,19 @@ const createEmptyEquipped = (): EquippedItems => ({
   amulet: null
 })
 
-// ============================================================================
-// ITEM CELL COMPONENT
-// ============================================================================
-
-interface ItemCellProps {
-  item: InventoryItem
-  definition: ItemDefinition
-  cellSize: number
-  onTap: (item: InventoryItem, isEquipped: boolean) => void
-  isEquipped: boolean
-}
-
-function ItemCell({item, definition, cellSize, onTap, isEquipped}: ItemCellProps) {
+function ItemCell({definition, onTap}: {definition: ItemDefinition; onTap: () => void}) {
   const rarityColor = RARITY_COLORS[definition.rarity]
 
   return (
     <Pressable
-      onPress={() => onTap(item, isEquipped)}
+      onPress={onTap}
       style={({pressed}) => [
         styles.itemCell,
         {
-          width: cellSize,
-          height: cellSize,
+          width: CELL_SIZE,
+          height: CELL_SIZE,
           borderColor: rarityColor,
-          backgroundColor: `${rarityColor}33`,
+          backgroundColor: `${rarityColor}33`, // TODO:
           opacity: pressed ? 0.7 : 1
         }
       ]}
@@ -86,39 +66,21 @@ function ItemCell({item, definition, cellSize, onTap, isEquipped}: ItemCellProps
   )
 }
 
-// ============================================================================
-// EQUIPMENT SLOT COMPONENT
-// ============================================================================
-
-interface EquipmentSlotProps {
-  slotType: EquipmentSlotType
+function EquipmentSlot({
+  item,
+  slotInfo,
+  onTap
+}: {
   item: InventoryItem | null
-  cellSize: number
   slotInfo: {label: string; icon: string}
   onTap: (item: InventoryItem, isEquipped: boolean) => void
-}
-
-function EquipmentSlot({slotType, item, cellSize, slotInfo, onTap}: EquipmentSlotProps) {
-  const definition = item ? getItemDefinition(item.definitionId) : null
+}) {
+  const definition = item && getItemDefinition(item.definitionId)
 
   return (
-    <View
-      style={[
-        styles.equipmentSlot,
-        {
-          width: cellSize,
-          height: cellSize
-        }
-      ]}
-    >
-      {item && definition ? (
-        <ItemCell
-          item={item}
-          definition={definition}
-          cellSize={cellSize - 4}
-          onTap={onTap}
-          isEquipped={true}
-        />
+    <View style={[styles.equipmentSlot]}>
+      {definition ? (
+        <ItemCell definition={definition} onTap={() => onTap(item, true)} />
       ) : (
         <View style={styles.emptySlot}>
           <Text style={styles.slotIcon}>{slotInfo.icon}</Text>
@@ -129,18 +91,14 @@ function EquipmentSlot({slotType, item, cellSize, slotInfo, onTap}: EquipmentSlo
   )
 }
 
-// ============================================================================
-// BACKPACK GRID COMPONENT
-// ============================================================================
-
-interface BackpackGridProps {
+//TODO: GRID is too complex, simplify this
+function BackpackGrid({
+  items,
+  onTap
+}: {
   items: InventoryItem[]
-  cellSize: number
   onTap: (item: InventoryItem, isEquipped: boolean) => void
-}
-
-function BackpackGrid({items, cellSize, onTap}: BackpackGridProps) {
-  // Create grid cells
+}) {
   const gridCells = useMemo(() => {
     const cells = []
     for (let y = 0; y < GRID_ROWS; y++) {
@@ -148,21 +106,13 @@ function BackpackGrid({items, cellSize, onTap}: BackpackGridProps) {
         cells.push(
           <View
             key={`cell-${x}-${y}`}
-            style={[
-              styles.gridCell,
-              {
-                width: cellSize,
-                height: cellSize,
-                left: x * (cellSize + CELL_GAP),
-                top: y * (cellSize + CELL_GAP)
-              }
-            ]}
+            style={[styles.gridCell, {left: x * (CELL_SIZE + CELL_GAP), top: y * (CELL_SIZE + CELL_GAP)}]}
           />
         )
       }
     }
     return cells
-  }, [cellSize])
+  }, [])
 
   // Render items - position calculated from array index
   const itemElements = useMemo(() => {
@@ -170,34 +120,24 @@ function BackpackGrid({items, cellSize, onTap}: BackpackGridProps) {
       const definition = getItemDefinition(item.definitionId)
       if (!definition) return null
 
+      //TODO: too complex, simplify this
       const gridX = index % GRID_COLS
       const gridY = Math.floor(index / GRID_COLS)
 
       return (
         <View
           key={item.instanceId}
-          style={[
-            styles.itemWrapper,
-            {
-              left: gridX * (cellSize + CELL_GAP),
-              top: gridY * (cellSize + CELL_GAP)
-            }
-          ]}
+          style={[styles.itemWrapper, {left: gridX * (CELL_SIZE + CELL_GAP), top: gridY * (CELL_SIZE + CELL_GAP)}]}
         >
-          <ItemCell
-            item={item}
-            definition={definition}
-            cellSize={cellSize}
-            onTap={onTap}
-            isEquipped={false}
-          />
+          <ItemCell definition={definition} onTap={() => onTap(item, false)} />
         </View>
       )
     })
-  }, [items, cellSize, onTap])
+  }, [items, onTap])
 
-  const gridWidth = GRID_COLS * (cellSize + CELL_GAP) - CELL_GAP
-  const gridHeight = GRID_ROWS * (cellSize + CELL_GAP) - CELL_GAP
+  //TODO: too complex, maybe we should just use a Dispaly: flex with gap
+  const gridWidth = GRID_COLS * (CELL_SIZE + CELL_GAP) - CELL_GAP
+  const gridHeight = GRID_ROWS * (CELL_SIZE + CELL_GAP) - CELL_GAP
 
   return (
     <View style={[styles.backpackGrid, {width: gridWidth, height: gridHeight}]}>
@@ -207,18 +147,12 @@ function BackpackGrid({items, cellSize, onTap}: BackpackGridProps) {
   )
 }
 
-// ============================================================================
-// MAIN INVENTORY SCREEN
-// ============================================================================
-
 export default function InventoryScreen() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(createTestInventory)
   const [equipped, setEquipped] = useState<EquippedItems>(createEmptyEquipped)
-
-  // Confirmation dialog state
-  const [dialogVisible, setDialogVisible] = useState(false)
+  const [inventory, setInventory] = useState<InventoryItem[]>(createTestInventory)
   const [dialogItem, setDialogItem] = useState<{item: InventoryItem; isEquipped: boolean} | null>(null)
 
+  // TODO: too complex, simplify this
   const cellSize = useMemo(() => {
     const availableWidth = SCREEN_WIDTH - 32 // padding
     return Math.min(CELL_SIZE, Math.floor((availableWidth - (GRID_COLS - 1) * CELL_GAP) / GRID_COLS))
@@ -227,21 +161,20 @@ export default function InventoryScreen() {
   // Check if there's room in the backpack
   const hasRoom = useCallback(
     (excludeItem?: InventoryItem): boolean => {
-      const count = excludeItem 
-        ? inventory.filter(i => i.instanceId !== excludeItem.instanceId).length 
+      const count = excludeItem
+        ? inventory.filter((item) => item.instanceId !== excludeItem.instanceId).length // TODO: lenght - 1 for excluded
         : inventory.length
       return count < MAX_INVENTORY_SIZE
     },
     [inventory]
   )
 
-  // Handle tap for equip/unequip confirmation
   const handleTap = useCallback((item: InventoryItem, isEquipped: boolean) => {
     setDialogItem({item, isEquipped})
-    setDialogVisible(true)
   }, [])
 
   // Confirm equip/unequip
+  //TODO: no notifications for errors of empty space
   const handleConfirmAction = useCallback(() => {
     if (!dialogItem) return
 
@@ -249,23 +182,19 @@ export default function InventoryScreen() {
     const definition = getItemDefinition(item.definitionId)
     if (!definition) return
 
-    if (isEquipped) {
-      // Unequip: move to inventory
-      if (hasRoom()) {
-        const slotType = Object.entries(equipped).find(([_, v]) => v?.instanceId === item.instanceId)?.[0]
-        if (slotType) {
-          setEquipped(prev => ({
-            ...prev,
-            [slotType]: null
-          }))
-          setInventory(prev => [...prev, item])
-        }
+    if (isEquipped && hasRoom()) {
+      const slotType = (Object.keys(equipped) as EquipmentSlotType[]).find(
+        (type) => equipped[type]?.instanceId === item.instanceId
+      )
+      if (slotType) {
+        setEquipped((prev) => ({...prev, [slotType]: null}))
+        setInventory((prev) => [...prev, item])
       }
     } else {
-      // Equip: find appropriate slot
-      let targetSlot: EquipmentSlotType = definition.slot
+      let targetSlot = definition.slot
 
       // For rings, check which slot is available
+      //TODO: bug if slot is of ring2, alos it is complex
       if (definition.slot === 'ring1') {
         if (equipped.ring1 === null) {
           targetSlot = 'ring1'
@@ -276,21 +205,20 @@ export default function InventoryScreen() {
 
       const existingItem = equipped[targetSlot]
 
-      setEquipped(prev => ({
-        ...prev,
-        [targetSlot]: item
-      }))
-      setInventory(prev => prev.filter(i => i.instanceId !== item.instanceId))
+      setEquipped((prev) => ({...prev, [targetSlot]: item}))
+      //TODO checck hasr romm and instead of tow setInventory use one that replaces
+      setInventory((prev) => prev.filter((prevItem) => prevItem.instanceId !== item.instanceId))
 
       // Move existing item to inventory (swap)
       if (existingItem && hasRoom(item)) {
-        setInventory(prev => [...prev, existingItem])
+        setInventory((prev) => [...prev, existingItem])
       }
     }
 
-    setDialogVisible(false)
     setDialogItem(null)
   }, [dialogItem, equipped, hasRoom])
+
+  // ----------------------------------------------------------------------------
 
   // Get dialog info
   const dialogInfo = useMemo(() => {
@@ -301,6 +229,7 @@ export default function InventoryScreen() {
     const action = dialogItem.isEquipped ? 'Unequip' : 'Equip'
     const rarityColor = RARITY_COLORS[definition.rarity]
 
+    //TODO: extract in a reusable function???
     // Format stats
     const stats: string[] = []
     if (definition.stats.damage) {
@@ -341,22 +270,19 @@ export default function InventoryScreen() {
           <Text variant="titleMedium" style={styles.sectionTitle}>
             Equipment
           </Text>
+          {/* TODO instead of find equipment slot use a map */}
           <View style={styles.equipmentGrid}>
             {/* Row 0: Helmet, Amulet */}
             <View style={styles.equipmentRow}>
               <View style={[styles.equipmentCell, {width: cellSize}]} />
               <EquipmentSlot
-                slotType="helmet"
                 item={equipped.helmet}
-                cellSize={cellSize}
-                slotInfo={EQUIPMENT_SLOTS.find(s => s.type === 'helmet')!}
+                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'helmet')!}
                 onTap={handleTap}
               />
               <EquipmentSlot
-                slotType="amulet"
                 item={equipped.amulet}
-                cellSize={cellSize}
-                slotInfo={EQUIPMENT_SLOTS.find(s => s.type === 'amulet')!}
+                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'amulet')!}
                 onTap={handleTap}
               />
             </View>
@@ -364,24 +290,18 @@ export default function InventoryScreen() {
             {/* Row 1: Weapon, Armor, Offhand */}
             <View style={styles.equipmentRow}>
               <EquipmentSlot
-                slotType="weapon"
                 item={equipped.weapon}
-                cellSize={cellSize}
-                slotInfo={EQUIPMENT_SLOTS.find(s => s.type === 'weapon')!}
+                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'weapon')!}
                 onTap={handleTap}
               />
               <EquipmentSlot
-                slotType="armor"
                 item={equipped.armor}
-                cellSize={cellSize}
-                slotInfo={EQUIPMENT_SLOTS.find(s => s.type === 'armor')!}
+                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'armor')!}
                 onTap={handleTap}
               />
               <EquipmentSlot
-                slotType="offhand"
                 item={equipped.offhand}
-                cellSize={cellSize}
-                slotInfo={EQUIPMENT_SLOTS.find(s => s.type === 'offhand')!}
+                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'offhand')!}
                 onTap={handleTap}
               />
             </View>
@@ -389,24 +309,18 @@ export default function InventoryScreen() {
             {/* Row 2: Gloves, Ring1, Ring2 */}
             <View style={styles.equipmentRow}>
               <EquipmentSlot
-                slotType="gloves"
                 item={equipped.gloves}
-                cellSize={cellSize}
-                slotInfo={EQUIPMENT_SLOTS.find(s => s.type === 'gloves')!}
+                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'gloves')!}
                 onTap={handleTap}
               />
               <EquipmentSlot
-                slotType="ring1"
                 item={equipped.ring1}
-                cellSize={cellSize}
-                slotInfo={EQUIPMENT_SLOTS.find(s => s.type === 'ring1')!}
+                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'ring1')!}
                 onTap={handleTap}
               />
               <EquipmentSlot
-                slotType="ring2"
                 item={equipped.ring2}
-                cellSize={cellSize}
-                slotInfo={EQUIPMENT_SLOTS.find(s => s.type === 'ring2')!}
+                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'ring2')!}
                 onTap={handleTap}
               />
             </View>
@@ -415,10 +329,8 @@ export default function InventoryScreen() {
             <View style={styles.equipmentRow}>
               <View style={[styles.equipmentCell, {width: cellSize}]} />
               <EquipmentSlot
-                slotType="boots"
                 item={equipped.boots}
-                cellSize={cellSize}
-                slotInfo={EQUIPMENT_SLOTS.find(s => s.type === 'boots')!}
+                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'boots')!}
                 onTap={handleTap}
               />
               <View style={[styles.equipmentCell, {width: cellSize}]} />
@@ -432,14 +344,14 @@ export default function InventoryScreen() {
             Backpack
           </Text>
           <View style={styles.backpackContainer}>
-            <BackpackGrid items={inventory} cellSize={cellSize} onTap={handleTap} />
+            <BackpackGrid items={inventory} onTap={handleTap} />
           </View>
         </View>
       </ScrollView>
 
       {/* Equip/Unequip Confirmation Dialog */}
       <Portal>
-        <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)} style={styles.dialog}>
+        <Dialog visible={!!dialogItem} onDismiss={() => setDialogItem(null)} style={styles.dialog}>
           <View style={styles.dialogHeader}>
             <Text style={[styles.dialogTitle, dialogInfo && {color: dialogInfo.rarityColor}]}>
               {dialogInfo ? `${dialogInfo.icon} ${dialogInfo.name}` : ''}
@@ -456,7 +368,7 @@ export default function InventoryScreen() {
             </View>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setDialogVisible(false)} textColor="#888">
+            <Button onPress={() => setDialogItem(null)} textColor="#888">
               Cancel
             </Button>
             <Button onPress={handleConfirmAction} mode="contained" buttonColor="#4a90e2">
@@ -527,7 +439,9 @@ const styles = StyleSheet.create({
     borderColor: '#444',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0f3460'
+    backgroundColor: '#0f3460',
+    width: CELL_SIZE,
+    height: CELL_SIZE
   },
   emptySlot: {
     alignItems: 'center',
@@ -553,6 +467,8 @@ const styles = StyleSheet.create({
   },
   gridCell: {
     position: 'absolute',
+    width: CELL_SIZE,
+    height: CELL_SIZE,
     borderWidth: 1,
     borderRadius: 6,
     borderColor: '#333',
