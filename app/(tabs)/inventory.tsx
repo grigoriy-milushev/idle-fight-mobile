@@ -225,35 +225,26 @@ export default function InventoryScreen() {
     if (!dialogItem) return null
     const definition = getItemDefinition(dialogItem.item.definitionId)
     if (!definition) return null
+    const {name, icon, rarity, description, stats} = definition
 
     const action = dialogItem.isEquipped ? 'Unequip' : 'Equip'
-    const rarityColor = RARITY_COLORS[definition.rarity]
+    const rarityColor = RARITY_COLORS[rarity]
 
-    //TODO: extract in a reusable function???
+    //TODO: Think of better way, not so iffy
     // Format stats
-    const stats: string[] = []
-    if (definition.stats.damage) {
-      stats.push(`Damage: ${definition.stats.damage.from}-${definition.stats.damage.to}`)
-    }
-    if (definition.stats.armor) stats.push(`Armor: ${definition.stats.armor}`)
-    if (definition.stats.maxHealth) stats.push(`Max Health: +${definition.stats.maxHealth}`)
-    if (definition.stats.strength) stats.push(`Strength: +${definition.stats.strength}`)
-    if (definition.stats.agility) stats.push(`Agility: +${definition.stats.agility}`)
-    if (definition.stats.vitality) stats.push(`Vitality: +${definition.stats.vitality}`)
-    if (definition.stats.attackSpeed) {
-      const speedText =
-        definition.stats.attackSpeed < 0 ? `${definition.stats.attackSpeed}ms` : `+${definition.stats.attackSpeed}ms`
-      stats.push(`Attack Speed: ${speedText}`)
+    const statsDescription: string[] = []
+    if (stats.damage) statsDescription.push(`Damage: ${stats.damage.from}-${stats.damage.to}`)
+    if (stats.armor) statsDescription.push(`Armor: ${stats.armor}`)
+    if (stats.maxHealth) statsDescription.push(`Max Health: +${stats.maxHealth}`)
+    if (stats.strength) statsDescription.push(`Strength: +${stats.strength}`)
+    if (stats.agility) statsDescription.push(`Agility: +${stats.agility}`)
+    if (stats.vitality) statsDescription.push(`Vitality: +${stats.vitality}`)
+    if (stats.attackSpeed) {
+      // TODO: not sure do we want positive and negative
+      statsDescription.push(`Attack Speed: ${stats.attackSpeed < 0 ? '' : '+'}${stats.attackSpeed}ms`)
     }
 
-    return {
-      action,
-      name: definition.name,
-      icon: definition.icon,
-      rarityColor,
-      description: definition.description,
-      stats
-    }
+    return {action, name, icon, rarityColor, description, statsDescription}
   }, [dialogItem])
 
   return (
@@ -270,69 +261,32 @@ export default function InventoryScreen() {
           <Text variant="titleMedium" style={styles.sectionTitle}>
             Equipment
           </Text>
-          {/* TODO instead of find equipment slot use a map */}
           <View style={styles.equipmentGrid}>
             {/* Row 0: Helmet, Amulet */}
             <View style={styles.equipmentRow}>
               <View style={[styles.equipmentCell, {width: cellSize}]} />
-              <EquipmentSlot
-                item={equipped.helmet}
-                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'helmet')!}
-                onTap={handleTap}
-              />
-              <EquipmentSlot
-                item={equipped.amulet}
-                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'amulet')!}
-                onTap={handleTap}
-              />
+              <EquipmentSlot item={equipped.helmet} slotInfo={EQUIPMENT_SLOTS.helmet} onTap={handleTap} />
+              <EquipmentSlot item={equipped.amulet} slotInfo={EQUIPMENT_SLOTS.amulet} onTap={handleTap} />
             </View>
 
             {/* Row 1: Weapon, Armor, Offhand */}
             <View style={styles.equipmentRow}>
-              <EquipmentSlot
-                item={equipped.weapon}
-                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'weapon')!}
-                onTap={handleTap}
-              />
-              <EquipmentSlot
-                item={equipped.armor}
-                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'armor')!}
-                onTap={handleTap}
-              />
-              <EquipmentSlot
-                item={equipped.offhand}
-                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'offhand')!}
-                onTap={handleTap}
-              />
+              <EquipmentSlot item={equipped.weapon} slotInfo={EQUIPMENT_SLOTS.weapon} onTap={handleTap} />
+              <EquipmentSlot item={equipped.armor} slotInfo={EQUIPMENT_SLOTS.armor} onTap={handleTap} />
+              <EquipmentSlot item={equipped.offhand} slotInfo={EQUIPMENT_SLOTS.offhand} onTap={handleTap} />
             </View>
 
             {/* Row 2: Gloves, Ring1, Ring2 */}
             <View style={styles.equipmentRow}>
-              <EquipmentSlot
-                item={equipped.gloves}
-                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'gloves')!}
-                onTap={handleTap}
-              />
-              <EquipmentSlot
-                item={equipped.ring1}
-                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'ring1')!}
-                onTap={handleTap}
-              />
-              <EquipmentSlot
-                item={equipped.ring2}
-                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'ring2')!}
-                onTap={handleTap}
-              />
+              <EquipmentSlot item={equipped.gloves} slotInfo={EQUIPMENT_SLOTS.gloves} onTap={handleTap} />
+              <EquipmentSlot item={equipped.ring1} slotInfo={EQUIPMENT_SLOTS.ring1} onTap={handleTap} />
+              <EquipmentSlot item={equipped.ring2} slotInfo={EQUIPMENT_SLOTS.ring2} onTap={handleTap} />
             </View>
 
             {/* Row 3: Boots */}
             <View style={styles.equipmentRow}>
               <View style={[styles.equipmentCell, {width: cellSize}]} />
-              <EquipmentSlot
-                item={equipped.boots}
-                slotInfo={EQUIPMENT_SLOTS.find((s) => s.type === 'boots')!}
-                onTap={handleTap}
-              />
+              <EquipmentSlot item={equipped.boots} slotInfo={EQUIPMENT_SLOTS.boots} onTap={handleTap} />
               <View style={[styles.equipmentCell, {width: cellSize}]} />
             </View>
           </View>
@@ -360,7 +314,7 @@ export default function InventoryScreen() {
           <Dialog.Content>
             {dialogInfo?.description && <Text style={styles.dialogDescription}>{dialogInfo.description}</Text>}
             <View style={styles.dialogStats}>
-              {dialogInfo?.stats.map((stat, i) => (
+              {dialogInfo?.statsDescription.map((stat, i) => (
                 <Text key={i} style={styles.dialogStat}>
                   {stat}
                 </Text>
@@ -380,10 +334,6 @@ export default function InventoryScreen() {
     </SafeAreaView>
   )
 }
-
-// ============================================================================
-// STYLES
-// ============================================================================
 
 const styles = StyleSheet.create({
   container: {

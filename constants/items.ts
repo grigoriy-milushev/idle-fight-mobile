@@ -1,4 +1,4 @@
-import {EquipmentSlotType, ItemDefinition, ItemRarity} from '@/types/game'
+import {ItemDefinition, ItemRarity} from '@/types/game'
 
 // Rarity colors for UI
 export const RARITY_COLORS: Record<ItemRarity, string> = {
@@ -8,22 +8,17 @@ export const RARITY_COLORS: Record<ItemRarity, string> = {
   legendary: '#ff8c00'
 }
 
-// Equipment slot display info - Diablo 2 style paper doll layout
-export const EQUIPMENT_SLOTS: {
-  type: EquipmentSlotType
-  label: string
-  icon: string
-}[] = [
-  {type: 'helmet', label: 'Helmet', icon: '🪖'},
-  {type: 'amulet', label: 'Amulet', icon: '📿'},
-  {type: 'weapon', label: 'Weapon', icon: '🗡️'},
-  {type: 'armor', label: 'Armor', icon: '🧥'},
-  {type: 'offhand', label: 'Offhand', icon: '🛡️'},
-  {type: 'gloves', label: 'Gloves', icon: '🧤'},
-  {type: 'ring1', label: 'Ring', icon: '💍'},
-  {type: 'ring2', label: 'Ring', icon: '💍'},
-  {type: 'boots', label: 'Boots', icon: '🥾'}
-]
+export const EQUIPMENT_SLOTS = {
+  helmet: {label: 'Helmet', icon: '🪖'},
+  amulet: {label: 'Amulet', icon: '📿'},
+  weapon: {label: 'Weapon', icon: '🗡️'},
+  armor: {label: 'Armor', icon: '🧥'},
+  offhand: {label: 'Offhand', icon: '🛡️'},
+  gloves: {label: 'Gloves', icon: '🧤'},
+  ring1: {label: 'Ring', icon: '💍'},
+  ring2: {label: 'Ring', icon: '💍'},
+  boots: {label: 'Boots', icon: '🥾'}
+}
 
 // Item definitions - all available items in the game
 export const ITEMS: Record<string, ItemDefinition> = {
@@ -342,19 +337,6 @@ export const ITEMS: Record<string, ItemDefinition> = {
 // Helper to get item definition by id
 export const getItemDefinition = (id: string): ItemDefinition | undefined => ITEMS[id]
 
-// Create a new inventory item instance
-export const createInventoryItem = (
-  definitionId: string
-): {instanceId: string; definitionId: string} | null => {
-  const definition = ITEMS[definitionId]
-  if (!definition) return null
-
-  return {
-    instanceId: `${definitionId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    definitionId
-  }
-}
-
 // Default empty equipped items
 export const createEmptyEquippedItems = () => ({
   helmet: null,
@@ -367,4 +349,3 @@ export const createEmptyEquippedItems = () => ({
   ring2: null,
   amulet: null
 })
-
