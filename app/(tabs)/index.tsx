@@ -2,8 +2,9 @@ import {FloatingNumbersContainer} from '@/components/FloatingNumbersContainer'
 import {StatsModal, StatsSection} from '@/components/StatsModal'
 import {ProgressBarWithText} from '@/components/ui/ProgressBarWithText'
 import {monsters} from '@/constants/monsters'
+import {useInventory} from '@/contexts/InventoryContext'
 import {useFightAnimations} from '@/hooks/useFightAnimations'
-import {GameState, Monster, StatType, User} from '@/types/game'
+import {GameState, ItemStats, Monster, StatType, User} from '@/types/game'
 import {
   BASE_ATTACK_SPEED,
   BASE_DAMAGE,
@@ -116,7 +117,8 @@ type GameAction =
   | {type: 'TICK'; deltaMs: number}
   | {type: 'SET_FIGHTING'; value: boolean}
   | {type: 'RESTART'}
-  | {type: 'ALLOCATE_STAT'; stat: StatType}
+  | {type: 'ALLOCATE_STAT'; stat: StatType; equipBonuses?: ItemStats}
+  | {type: 'UPDATE_EQUIPMENT'; equipBonuses: ItemStats}
 
 const createInitialState = (user?: User): GameState => ({
   user: user || createInitialUser(),
@@ -251,7 +253,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         statPoints: state.user.statPoints - 1
       }
 
-      const effectiveStats = calculateEffectiveStats(updatedUser)
+      const effectiveStats = calculateEffectiveStats(updatedUser, action.equipBonuses)
       const oldMaxHealth = state.user.maxHealth
       const newMaxHealth = effectiveStats.maxHealth
       const healthIncrease = newMaxHealth - oldMaxHealth
@@ -268,6 +270,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
 
+    case 'UPDATE_EQUIPMENT': {
+      const effectiveStats = calculateEffectiveStats(state.user, action.equipBonuses)
+      const oldMaxHealth = state.user.maxHealth
+      const newMaxHealth = effectiveStats.maxHealth
+      const healthDiff = newMaxHealth - oldMaxHealth
+
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          damage: effectiveStats.damage,
+          attackSpeed: effectiveStats.attackSpeed,
+          maxHealth: newMaxHealth,
+          health: Math.min(Math.max(1, state.user.health + healthDiff), newMaxHealth)
+        }
+      }
+    }
+
     default:
       return state
   }
@@ -277,6 +297,11 @@ export default function IdleFightScreen() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialState)
   const {user, monster, currentStage, isFighting, respawnTimer, userAttacked, monsterAttacked, goldGained} = state
   const [statsModalVisible, setStatsModalVisible] = useState(false)
+  const {equipmentBonuses} = useInventory()
+
+  useEffect(() => {
+    dispatch({type: 'UPDATE_EQUIPMENT', equipBonuses: equipmentBonuses})
+  }, [equipmentBonuses])
 
   const {
     userAnimatedStyle,
@@ -328,9 +353,12 @@ export default function IdleFightScreen() {
 
   const heroStatsSections = useMemo(() => createHeroStatsSections(user), [user])
 
-  const handleAllocateStat = useCallback((stat: StatType) => {
-    dispatch({type: 'ALLOCATE_STAT', stat})
-  }, [])
+  const handleAllocateStat = useCallback(
+    (stat: StatType) => {
+      dispatch({type: 'ALLOCATE_STAT', stat, equipBonuses: equipmentBonuses})
+    },
+    [equipmentBonuses]
+  )
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>

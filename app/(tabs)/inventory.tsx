@@ -1,5 +1,6 @@
 import {EQUIPMENT_SLOTS, getItemDefinition, RARITY_COLORS} from '@/constants/items'
-import {EquipmentSlotType, EquippedItems, InventoryItem, ItemDefinition} from '@/types/game'
+import {useInventory} from '@/contexts/InventoryContext'
+import {EquipmentSlotType, InventoryItem, ItemDefinition} from '@/types/game'
 import React, {useCallback, useMemo, useState} from 'react'
 import {Dimensions, Pressable, ScrollView, StyleSheet, View} from 'react-native'
 import {Button, Dialog, Portal, Surface, Text} from 'react-native-paper'
@@ -13,36 +14,6 @@ const CELL_SIZE = 52
 const CELL_GAP = 4
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window')
-
-const createTestInventory = (): InventoryItem[] => [
-  {instanceId: 'test-1', definitionId: 'rusty_sword'},
-  {instanceId: 'test-2', definitionId: 'leather_cap'},
-  {instanceId: 'test-3', definitionId: 'cloth_tunic'},
-  {instanceId: 'test-4', definitionId: 'wooden_shield'},
-  {instanceId: 'test-5', definitionId: 'leather_boots'},
-  {instanceId: 'test-6', definitionId: 'copper_ring'},
-  {instanceId: 'test-7', definitionId: 'bone_amulet'},
-  {instanceId: 'test-8', definitionId: 'cloth_gloves'},
-  {instanceId: 'test-9', definitionId: 'steel_blade'},
-  {instanceId: 'test-10', definitionId: 'iron_helm'},
-  {instanceId: 'test-11', definitionId: 'chainmail'},
-  {instanceId: 'test-12', definitionId: 'iron_shield'},
-  {instanceId: 'test-13', definitionId: 'doom_blade'},
-  {instanceId: 'test-14', definitionId: 'crown_of_kings'},
-  {instanceId: 'test-15', definitionId: 'swift_boots'}
-]
-
-const createEmptyEquipped = (): EquippedItems => ({
-  helmet: null,
-  armor: null,
-  gloves: null,
-  boots: null,
-  weapon: null,
-  offhand: null,
-  ring1: null,
-  ring2: null,
-  amulet: null
-})
 
 function ItemCell({definition, onTap}: {definition: ItemDefinition; onTap: () => void}) {
   const rarityColor = RARITY_COLORS[definition.rarity]
@@ -148,8 +119,7 @@ function BackpackGrid({
 }
 
 export default function InventoryScreen() {
-  const [equipped, setEquipped] = useState<EquippedItems>(createEmptyEquipped)
-  const [inventory, setInventory] = useState<InventoryItem[]>(createTestInventory)
+  const {equipped, inventory, setEquipped, setInventory} = useInventory()
   const [dialogItem, setDialogItem] = useState<{item: InventoryItem; isEquipped: boolean} | null>(null)
 
   // TODO: too complex, simplify this
@@ -216,7 +186,7 @@ export default function InventoryScreen() {
     }
 
     setDialogItem(null)
-  }, [dialogItem, equipped, hasRoom])
+  }, [dialogItem, equipped, hasRoom, setEquipped, setInventory])
 
   // ----------------------------------------------------------------------------
 
@@ -236,9 +206,6 @@ export default function InventoryScreen() {
     if (stats.damage) statsDescription.push(`Damage: ${stats.damage.from}-${stats.damage.to}`)
     if (stats.armor) statsDescription.push(`Armor: ${stats.armor}`)
     if (stats.maxHealth) statsDescription.push(`Max Health: +${stats.maxHealth}`)
-    if (stats.strength) statsDescription.push(`Strength: +${stats.strength}`)
-    if (stats.agility) statsDescription.push(`Agility: +${stats.agility}`)
-    if (stats.vitality) statsDescription.push(`Vitality: +${stats.vitality}`)
     if (stats.attackSpeed) {
       // TODO: not sure do we want positive and negative
       statsDescription.push(`Attack Speed: ${stats.attackSpeed < 0 ? '' : '+'}${stats.attackSpeed}ms`)

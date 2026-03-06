@@ -49,7 +49,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '⚔️',
     slot: 'weapon',
     rarity: 'magic',
-    stats: {damage: {from: 6, to: 12}, strength: 2},
+    stats: {damage: {from: 6, to: 12}},
     description: 'Finely crafted steel with a keen edge.'
   },
   battle_axe: {
@@ -67,7 +67,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🏹',
     slot: 'weapon',
     rarity: 'common',
-    stats: {damage: {from: 3, to: 7}, agility: 1},
+    stats: {damage: {from: 3, to: 7}, attackSpeed: -25},
     description: 'A reliable bow for hunting prey.'
   },
   war_hammer: {
@@ -76,7 +76,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🔨',
     slot: 'weapon',
     rarity: 'rare',
-    stats: {damage: {from: 10, to: 20}, strength: 3},
+    stats: {damage: {from: 10, to: 20}},
     description: 'Crushes armor and bones alike.'
   },
   magic_staff: {
@@ -85,7 +85,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🪄',
     slot: 'weapon',
     rarity: 'rare',
-    stats: {damage: {from: 5, to: 10}, vitality: 5, maxHealth: 20},
+    stats: {damage: {from: 5, to: 10}, maxHealth: 20},
     description: 'Channels arcane energies.'
   },
   doom_blade: {
@@ -94,7 +94,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🧿',
     slot: 'weapon',
     rarity: 'legendary',
-    stats: {damage: {from: 15, to: 30}, strength: 5, attackSpeed: -100},
+    stats: {damage: {from: 15, to: 30}, attackSpeed: -100},
     description: 'A cursed blade that hungers for souls.'
   },
 
@@ -116,7 +116,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🪖',
     slot: 'helmet',
     rarity: 'magic',
-    stats: {armor: 5, maxHealth: 10, vitality: 1},
+    stats: {armor: 5, maxHealth: 10},
     description: 'Solid iron protection for your head.'
   },
   crown_of_kings: {
@@ -125,7 +125,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '👑',
     slot: 'helmet',
     rarity: 'legendary',
-    stats: {armor: 8, maxHealth: 25, strength: 3, agility: 3, vitality: 3},
+    stats: {armor: 8, maxHealth: 25, attackSpeed: -50},
     description: 'Worn by ancient rulers.'
   },
 
@@ -156,7 +156,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🧥',
     slot: 'armor',
     rarity: 'magic',
-    stats: {armor: 10, maxHealth: 20, vitality: 2},
+    stats: {armor: 10, maxHealth: 20},
     description: 'Interlocking metal rings.'
   },
   plate_armor: {
@@ -165,7 +165,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🧥',
     slot: 'armor',
     rarity: 'rare',
-    stats: {armor: 15, maxHealth: 30, vitality: 4, attackSpeed: 50},
+    stats: {armor: 15, maxHealth: 30, attackSpeed: 50},
     description: 'Heavy but extremely protective.'
   },
 
@@ -187,7 +187,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🧤',
     slot: 'gloves',
     rarity: 'common',
-    stats: {armor: 2, agility: 1},
+    stats: {armor: 2, attackSpeed: -25},
     description: 'Good grip and protection.'
   },
   gauntlets: {
@@ -196,7 +196,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🧤',
     slot: 'gloves',
     rarity: 'magic',
-    stats: {armor: 4, strength: 2, damage: {from: 1, to: 2}},
+    stats: {armor: 4, damage: {from: 1, to: 2}},
     description: 'Armored gloves that pack a punch.'
   },
 
@@ -209,7 +209,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🥾',
     slot: 'boots',
     rarity: 'common',
-    stats: {agility: 1},
+    stats: {attackSpeed: -25},
     description: 'Light footwear.'
   },
   leather_boots: {
@@ -218,7 +218,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🥾',
     slot: 'boots',
     rarity: 'common',
-    stats: {armor: 2, agility: 1},
+    stats: {armor: 2, attackSpeed: -25},
     description: 'Sturdy walking boots.'
   },
   swift_boots: {
@@ -227,7 +227,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🥾',
     slot: 'boots',
     rarity: 'rare',
-    stats: {armor: 3, agility: 4, attackSpeed: -75},
+    stats: {armor: 3, attackSpeed: -75},
     description: 'Enchanted for speed.'
   },
 
@@ -249,7 +249,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🛡️',
     slot: 'offhand',
     rarity: 'magic',
-    stats: {armor: 10, maxHealth: 20, vitality: 2},
+    stats: {armor: 10, maxHealth: 20},
     description: 'Heavy iron defense.'
   },
   tower_shield: {
@@ -258,7 +258,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '🛡️',
     slot: 'offhand',
     rarity: 'rare',
-    stats: {armor: 18, maxHealth: 35, vitality: 4, attackSpeed: 100},
+    stats: {armor: 18, maxHealth: 35, attackSpeed: 100},
     description: 'Maximum protection at the cost of speed.'
   },
 
@@ -280,7 +280,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '💍',
     slot: 'ring1',
     rarity: 'magic',
-    stats: {maxHealth: 10, vitality: 1},
+    stats: {maxHealth: 10},
     description: 'A polished silver ring.'
   },
   ring_of_power: {
@@ -289,7 +289,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '💍',
     slot: 'ring1',
     rarity: 'rare',
-    stats: {strength: 3, damage: {from: 2, to: 4}},
+    stats: {damage: {from: 2, to: 4}},
     description: 'Grants immense strength.'
   },
   ring_of_speed: {
@@ -298,7 +298,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '💍',
     slot: 'ring1',
     rarity: 'rare',
-    stats: {agility: 4, attackSpeed: -50},
+    stats: {attackSpeed: -50},
     description: 'Quickens your movements.'
   },
 
@@ -320,7 +320,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '📿',
     slot: 'amulet',
     rarity: 'magic',
-    stats: {maxHealth: 15, vitality: 2},
+    stats: {maxHealth: 15},
     description: 'Smooth jade brings vitality.'
   },
   amulet_of_fury: {
@@ -329,7 +329,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     icon: '📿',
     slot: 'amulet',
     rarity: 'legendary',
-    stats: {strength: 5, agility: 3, damage: {from: 5, to: 8}, attackSpeed: -100},
+    stats: {damage: {from: 5, to: 8}, attackSpeed: -100},
     description: 'Channels raw fury into power.'
   }
 }

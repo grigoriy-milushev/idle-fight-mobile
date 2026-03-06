@@ -66,9 +66,6 @@ export interface ItemStats {
   damage?: Demage
   armor?: number
   maxHealth?: number
-  strength?: number
-  agility?: number
-  vitality?: number
   attackSpeed?: number // bonus/reduction in ms
 }
 
