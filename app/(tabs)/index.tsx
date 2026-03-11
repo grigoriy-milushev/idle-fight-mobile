@@ -2,7 +2,6 @@ import {FloatingNumbersContainer} from '@/components/FloatingNumbersContainer'
 import {StatsModal, StatsSection} from '@/components/StatsModal'
 import {ProgressBarWithText} from '@/components/ui/ProgressBarWithText'
 import {useGameDispatch, useGameState} from '@/contexts/GameContext'
-import {useInventory} from '@/contexts/InventoryContext'
 import {useFightAnimations} from '@/hooks/useFightAnimations'
 import {StatType, User} from '@/types/game'
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
@@ -53,11 +52,6 @@ export default function IdleFightScreen() {
   const dispatch = useGameDispatch()
   const {user, monster, currentStage, isFighting, respawnTimer, userAttacked, monsterAttacked, goldGained} = state
   const [statsModalVisible, setStatsModalVisible] = useState(false)
-  const {equipmentBonuses} = useInventory()
-
-  useEffect(() => {
-    dispatch({type: 'UPDATE_EQUIPMENT', equipBonuses: equipmentBonuses})
-  }, [equipmentBonuses, dispatch])
 
   const {
     userAnimatedStyle,
@@ -111,9 +105,9 @@ export default function IdleFightScreen() {
 
   const handleAllocateStat = useCallback(
     (stat: StatType) => {
-      dispatch({type: 'ALLOCATE_STAT', stat, equipBonuses: equipmentBonuses})
+      dispatch({type: 'ALLOCATE_STAT', stat})
     },
-    [equipmentBonuses, dispatch]
+    [dispatch]
   )
 
   return (

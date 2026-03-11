@@ -1,11 +1,13 @@
+import {createEmptyEquippedItems, getItemDefinition} from '@/constants/items'
 import {monsters} from '@/constants/monsters'
-import {GameState, ItemStats, Monster, StatType, User} from '@/types/game'
+import {EquipmentSlotType, EquippedItems, GameState, InventoryItem, Monster, StatType, User} from '@/types/game'
 import {
   BASE_ATTACK_SPEED,
   BASE_DAMAGE,
   BASE_MAX_HEALTH,
   calculateDamageDealt,
   calculateEffectiveStats,
+  calculateEquipmentBonuses,
   calculateExpToNextLevel,
   calculateGoldGain,
   healthAfterAttack
@@ -14,13 +16,36 @@ import React, {Dispatch, ReactNode, createContext, useContext, useReducer} from 
 
 const RESPAWN_DELAY = 2000
 const STAT_POINTS_PER_LEVEL = 3
+const MAX_INVENTORY_SIZE = 30
 
 export type GameAction =
   | {type: 'TICK'; deltaMs: number}
   | {type: 'SET_FIGHTING'; value: boolean}
   | {type: 'RESTART'}
-  | {type: 'ALLOCATE_STAT'; stat: StatType; amount?: number; equipBonuses?: ItemStats}
-  | {type: 'UPDATE_EQUIPMENT'; equipBonuses: ItemStats}
+  | {type: 'ALLOCATE_STAT'; stat: StatType; instanceId?: string}
+  | {type: 'EQUIP_ITEM'; item: InventoryItem; targetSlot: EquipmentSlotType}
+  | {type: 'UNEQUIP_ITEM'; slotType: EquipmentSlotType}
+
+const createTestInventory = (): InventoryItem[] => [
+  {instanceId: 'test-1', definitionId: 'rusty_sword'},
+  {instanceId: 'test-2', definitionId: 'leather_cap'},
+  {instanceId: 'test-3', definitionId: 'cloth_tunic'},
+  {instanceId: 'test-4', definitionId: 'wooden_shield'},
+  {instanceId: 'test-5', definitionId: 'leather_boots'},
+  {instanceId: 'test-6', definitionId: 'copper_ring'},
+  {instanceId: 'test-7', definitionId: 'bone_amulet'},
+  {instanceId: 'test-8', definitionId: 'cloth_gloves'},
+  {instanceId: 'test-9', definitionId: 'steel_blade'},
+  {instanceId: 'test-10', definitionId: 'iron_helm'},
+  {instanceId: 'test-11', definitionId: 'chainmail'},
+  {instanceId: 'test-12', definitionId: 'iron_shield'},
+  {instanceId: 'test-13', definitionId: 'doom_blade'},
+  {instanceId: 'test-14', definitionId: 'crown_of_kings'},
+  {instanceId: 'test-15', definitionId: 'swift_boots'},
+  {instanceId: 'test-16', definitionId: 'book_of_strength'},
+  {instanceId: 'test-17', definitionId: 'book_of_agility'},
+  {instanceId: 'test-18', definitionId: 'book_of_vitality'}
+]
 
 const createInitialUser = (): User => {
   const baseUser = {
@@ -66,6 +91,11 @@ const createMonster = (stage: number = 1): Monster => {
     expGain: Math.floor(baseMonster.expGain * buffMultiplier),
     goldGain: Math.floor(baseMonster.goldGain * buffMultiplier)
   }
+}
+
+function applyEffectiveStats(user: User, equipped: EquippedItems) {
+  const equipBonuses = calculateEquipmentBonuses(equipped)
+  return calculateEffectiveStats(user, equipBonuses)
 }
 
 function processTick(state: GameState, deltaMs: number): GameState {
@@ -142,7 +172,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
       }
     }
   }
-  console.log(state.user.gold, user.gold, 'gold')
+
   return {
     ...state,
     user,
@@ -168,25 +198,44 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {...state, isFighting: action.value}
 
     case 'RESTART':
-      return createInitialState({
-        ...state.user,
-        health: state.user.maxHealth
-      })
+      return {
+        ...state,
+        user: {...state.user, health: state.user.maxHealth},
+        monster: createMonster(1),
+        currentStage: 1,
+        isFighting: true,
+        userAttackTimer: 0,
+        monsterAttackTimer: 0,
+        respawnTimer: 0,
+        userAttacked: undefined,
+        monsterAttacked: undefined,
+        goldGained: undefined
+      }
 
     case 'ALLOCATE_STAT': {
-      if (state.user.statPoints <= 0 && !action.amount) return state
+      if (state.user.statPoints <= 0 && !action.instanceId) return state
+      let amount = 1
+      const item = state.inventory.find((item) => item.instanceId === action.instanceId)
+
+      if (item) {
+        const definition = getItemDefinition(item.definitionId)
+        if (definition?.consumableEffect) amount = definition.consumableEffect.amount
+      }
 
       const updatedUser = {
         ...state.user,
-        [action.stat]: state.user[action.stat] + (action.amount ?? 1),
-        ...(action.amount ? {} : {statPoints: state.user.statPoints - 1})
+        [action.stat]: state.user[action.stat] + amount,
+        ...(action.instanceId ? {} : {statPoints: state.user.statPoints - 1})
       }
 
-      const effectiveStats = calculateEffectiveStats(updatedUser, action.equipBonuses)
+      const effectiveStats = applyEffectiveStats(updatedUser, state.equipped)
       const healthIncrease = effectiveStats.maxHealth - state.user.maxHealth
 
       return {
         ...state,
+        inventory: action.instanceId
+          ? state.inventory.filter((i) => i.instanceId !== action.instanceId)
+          : state.inventory,
         user: {
           ...updatedUser,
           damage: effectiveStats.damage,
@@ -197,12 +246,43 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
 
-    case 'UPDATE_EQUIPMENT': {
-      const effectiveStats = calculateEffectiveStats(state.user, action.equipBonuses)
+    case 'EQUIP_ITEM': {
+      const {item, targetSlot} = action
+      const prevEquippedItem = state.equipped[targetSlot]
+      const inventoryAfterRemoval = state.inventory.filter((i) => i.instanceId !== item.instanceId)
+
+      if (prevEquippedItem && inventoryAfterRemoval.length >= MAX_INVENTORY_SIZE) return state
+
+      const newEquipped = {...state.equipped, [targetSlot]: item}
+      const effectiveStats = applyEffectiveStats(state.user, newEquipped)
       const healthDiff = effectiveStats.maxHealth - state.user.maxHealth
 
       return {
         ...state,
+        equipped: newEquipped,
+        inventory: prevEquippedItem ? [...inventoryAfterRemoval, prevEquippedItem] : inventoryAfterRemoval,
+        user: {
+          ...state.user,
+          damage: effectiveStats.damage,
+          attackSpeed: effectiveStats.attackSpeed,
+          maxHealth: effectiveStats.maxHealth,
+          health: Math.min(Math.max(1, state.user.health + healthDiff), effectiveStats.maxHealth)
+        }
+      }
+    }
+
+    case 'UNEQUIP_ITEM': {
+      const item = state.equipped[action.slotType]
+      if (!item || state.inventory.length >= MAX_INVENTORY_SIZE) return state
+
+      const newEquipped = {...state.equipped, [action.slotType]: null}
+      const effectiveStats = applyEffectiveStats(state.user, newEquipped)
+      const healthDiff = effectiveStats.maxHealth - state.user.maxHealth
+
+      return {
+        ...state,
+        equipped: newEquipped,
+        inventory: [...state.inventory, item],
         user: {
           ...state.user,
           damage: effectiveStats.damage,
@@ -218,14 +298,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
   }
 }
 
-const createInitialState = (user?: User): GameState => ({
-  user: user || createInitialUser(),
+const createInitialState = (): GameState => ({
+  user: createInitialUser(),
   monster: createMonster(1),
   currentStage: 1,
   isFighting: true,
   userAttackTimer: 0,
   monsterAttackTimer: 0,
   respawnTimer: 0,
+  equipped: createEmptyEquippedItems(),
+  inventory: createTestInventory(),
   userAttacked: undefined,
   monsterAttacked: undefined,
   goldGained: undefined

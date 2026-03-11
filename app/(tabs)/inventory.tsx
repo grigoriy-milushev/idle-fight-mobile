@@ -1,6 +1,5 @@
 import {EQUIPMENT_SLOTS, getItemDefinition, RARITY_COLORS} from '@/constants/items'
-import {useGameDispatch} from '@/contexts/GameContext'
-import {useInventory} from '@/contexts/InventoryContext'
+import {useGameDispatch, useGameState} from '@/contexts/GameContext'
 import {EquipmentSlotType, InventoryItem, ItemDefinition} from '@/types/game'
 import React, {useCallback, useMemo, useState} from 'react'
 import {Dimensions, Pressable, ScrollView, StyleSheet, View} from 'react-native'
@@ -9,7 +8,6 @@ import {SafeAreaView} from 'react-native-safe-area-context'
 
 const GRID_COLS = 5
 const GRID_ROWS = 6
-const MAX_INVENTORY_SIZE = GRID_COLS * GRID_ROWS
 
 const CELL_SIZE = 52
 const CELL_GAP = 4
@@ -120,7 +118,7 @@ function BackpackGrid({
 }
 
 export default function InventoryScreen() {
-  const {equipped, inventory, equipmentBonuses, setEquipped, setInventory} = useInventory()
+  const {equipped, inventory} = useGameState()
   const dispatch = useGameDispatch()
   const [dialogItem, setDialogItem] = useState<{item: InventoryItem; isEquipped: boolean} | null>(null)
 
@@ -130,23 +128,10 @@ export default function InventoryScreen() {
     return Math.min(CELL_SIZE, Math.floor((availableWidth - (GRID_COLS - 1) * CELL_GAP) / GRID_COLS))
   }, [])
 
-  // Check if there's room in the backpack
-  const hasRoom = useCallback(
-    (excludeItem?: InventoryItem): boolean => {
-      const count = excludeItem
-        ? inventory.filter((item) => item.instanceId !== excludeItem.instanceId).length // TODO: lenght - 1 for excluded
-        : inventory.length
-      return count < MAX_INVENTORY_SIZE
-    },
-    [inventory]
-  )
-
   const handleTap = useCallback((item: InventoryItem, isEquipped: boolean) => {
     setDialogItem({item, isEquipped})
   }, [])
 
-  // Confirm equip/unequip/use
-  //TODO: no notifications for errors of empty space
   const handleConfirmAction = useCallback(() => {
     if (!dialogItem) return
 
@@ -155,30 +140,21 @@ export default function InventoryScreen() {
     if (!definition) return
 
     if (definition.consumableEffect) {
-      dispatch({
-        type: 'ALLOCATE_STAT',
-        stat: definition.consumableEffect.stat,
-        amount: definition.consumableEffect.amount,
-        equipBonuses: equipmentBonuses
-      })
-      setInventory((prev) => prev.filter((i) => i.instanceId !== item.instanceId))
+      dispatch({type: 'ALLOCATE_STAT', stat: definition.consumableEffect.stat, instanceId: item.instanceId})
       setDialogItem(null)
       return
     }
 
-    if (isEquipped && hasRoom()) {
+    if (isEquipped) {
       const slotType = (Object.keys(equipped) as EquipmentSlotType[]).find(
         (type) => equipped[type]?.instanceId === item.instanceId
       )
       if (slotType) {
-        setEquipped((prev) => ({...prev, [slotType]: null}))
-        setInventory((prev) => [...prev, item])
+        dispatch({type: 'UNEQUIP_ITEM', slotType})
       }
     } else if (definition.slot) {
-      let targetSlot = definition.slot
+      let targetSlot: EquipmentSlotType = definition.slot
 
-      // For rings, check which slot is available
-      //TODO: bug if slot is of ring2, alos it is complex
       if (definition.slot === 'ring1') {
         if (equipped.ring1 === null) {
           targetSlot = 'ring1'
@@ -187,20 +163,11 @@ export default function InventoryScreen() {
         }
       }
 
-      const existingItem = equipped[targetSlot]
-
-      setEquipped((prev) => ({...prev, [targetSlot]: item}))
-      //TODO checck hasr romm and instead of tow setInventory use one that replaces
-      setInventory((prev) => prev.filter((prevItem) => prevItem.instanceId !== item.instanceId))
-
-      // Move existing item to inventory (swap)
-      if (existingItem && hasRoom(item)) {
-        setInventory((prev) => [...prev, existingItem])
-      }
+      dispatch({type: 'EQUIP_ITEM', item, targetSlot})
     }
 
     setDialogItem(null)
-  }, [dialogItem, equipped, equipmentBonuses, hasRoom, setEquipped, setInventory, dispatch])
+  }, [dialogItem, equipped, dispatch])
 
   // ----------------------------------------------------------------------------
 

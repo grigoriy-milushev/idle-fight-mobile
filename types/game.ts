@@ -40,6 +40,8 @@ export type GameState = {
   userAttackTimer: number
   monsterAttackTimer: number
   respawnTimer: number
+  equipped: EquippedItems
+  inventory: InventoryItem[]
   userAttacked?: number
   monsterAttacked?: number
   goldGained?: number
@@ -95,9 +97,4 @@ export interface EquippedItems {
   ring1: InventoryItem | null
   ring2: InventoryItem | null
   amulet: InventoryItem | null
-}
-
-export interface Inventory {
-  items: InventoryItem[]
-  equipped: EquippedItems
 }
