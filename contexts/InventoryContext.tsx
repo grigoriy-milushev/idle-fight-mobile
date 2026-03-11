@@ -1,7 +1,7 @@
 import {createEmptyEquippedItems} from '@/constants/items'
 import {EquippedItems, InventoryItem, ItemStats} from '@/types/game'
 import {calculateEquipmentBonuses} from '@/utils/calculations'
-import React, {createContext, ReactNode, useContext, useMemo, useState} from 'react'
+import React, {ReactNode, createContext, useContext, useMemo, useState} from 'react'
 
 const createTestInventory = (): InventoryItem[] => [
   {instanceId: 'test-1', definitionId: 'rusty_sword'},
@@ -18,7 +18,10 @@ const createTestInventory = (): InventoryItem[] => [
   {instanceId: 'test-12', definitionId: 'iron_shield'},
   {instanceId: 'test-13', definitionId: 'doom_blade'},
   {instanceId: 'test-14', definitionId: 'crown_of_kings'},
-  {instanceId: 'test-15', definitionId: 'swift_boots'}
+  {instanceId: 'test-15', definitionId: 'swift_boots'},
+  {instanceId: 'test-16', definitionId: 'book_of_strength'},
+  {instanceId: 'test-17', definitionId: 'book_of_agility'},
+  {instanceId: 'test-18', definitionId: 'book_of_vitality'}
 ]
 
 interface InventoryContextType {

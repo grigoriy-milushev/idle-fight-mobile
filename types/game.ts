@@ -73,10 +73,11 @@ export interface ItemDefinition {
   id: string
   name: string
   icon: string
-  slot: EquipmentSlotType
+  slot?: EquipmentSlotType
   rarity: ItemRarity
   stats: ItemStats
   description?: string
+  consumableEffect?: {stat: StatType; amount: number}
 }
 
 export interface InventoryItem {

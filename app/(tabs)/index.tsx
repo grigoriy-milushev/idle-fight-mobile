@@ -1,29 +1,17 @@
 import {FloatingNumbersContainer} from '@/components/FloatingNumbersContainer'
 import {StatsModal, StatsSection} from '@/components/StatsModal'
 import {ProgressBarWithText} from '@/components/ui/ProgressBarWithText'
-import {monsters} from '@/constants/monsters'
+import {useGameDispatch, useGameState} from '@/contexts/GameContext'
 import {useInventory} from '@/contexts/InventoryContext'
 import {useFightAnimations} from '@/hooks/useFightAnimations'
-import {GameState, ItemStats, Monster, StatType, User} from '@/types/game'
-import {
-  BASE_ATTACK_SPEED,
-  BASE_DAMAGE,
-  BASE_MAX_HEALTH,
-  calculateDamageDealt,
-  calculateEffectiveStats,
-  calculateExpToNextLevel,
-  calculateGoldGain,
-  healthAfterAttack
-} from '@/utils/calculations'
-import React, {useCallback, useEffect, useMemo, useReducer, useRef, useState} from 'react'
+import {StatType, User} from '@/types/game'
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {Button, Card, Chip, IconButton, Surface, Text} from 'react-native-paper'
 import Animated from 'react-native-reanimated'
 import {SafeAreaView} from 'react-native-safe-area-context'
 
-const TICK_RATE = 100 // ms per tick (~10 ticks/sec)
-const RESPAWN_DELAY = 2000 // ms
-const STAT_POINTS_PER_LEVEL = 3
+const TICK_RATE = 100
 
 const createHeroStatsSections = (user: User): StatsSection[] => [
   {
@@ -60,248 +48,16 @@ const createHeroStatsSections = (user: User): StatsSection[] => [
   }
 ]
 
-const createInitialUser = (): User => {
-  const baseUser = {
-    strength: 0,
-    agility: 0,
-    vitality: 0,
-    statPoints: 0,
-    experience: 0,
-    level: 1,
-    experienceToNextLevel: calculateExpToNextLevel(1),
-    gold: 0,
-    damage: {
-      from: BASE_DAMAGE.from + 20,
-      to: BASE_DAMAGE.to + 20
-    },
-    attackSpeed: BASE_ATTACK_SPEED,
-    maxHealth: BASE_MAX_HEALTH
-  }
-
-  const effectiveStats = calculateEffectiveStats(baseUser as User)
-
-  return {
-    ...baseUser,
-    health: effectiveStats.maxHealth,
-    maxHealth: effectiveStats.maxHealth,
-    damage: effectiveStats.damage,
-    attackSpeed: effectiveStats.attackSpeed
-  }
-}
-
-const createMonster = (stage: number = 1): Monster => {
-  const cycle = Math.floor((stage - 1) / monsters.length)
-  const baseMonster = monsters[(stage - 1) % monsters.length]
-  const buffMultiplier = 1 + cycle * 0.5
-
-  return {
-    ...baseMonster,
-    id: `${baseMonster.id}-${Date.now()}`,
-    health: Math.floor(baseMonster.health * buffMultiplier),
-    maxHealth: Math.floor(baseMonster.maxHealth * buffMultiplier),
-    damage: {
-      from: Math.floor(baseMonster.damage.from * buffMultiplier),
-      to: Math.floor(baseMonster.damage.to * buffMultiplier)
-    },
-    attackSpeed: Math.max(Math.floor(baseMonster.attackSpeed - cycle * 100), 500),
-    expGain: Math.floor(baseMonster.expGain * buffMultiplier),
-    goldGain: Math.floor(baseMonster.goldGain * buffMultiplier)
-  }
-}
-
-// ============================================================================
-// GAME STATE & REDUCER (Battle Engine)
-// ============================================================================
-
-type GameAction =
-  | {type: 'TICK'; deltaMs: number}
-  | {type: 'SET_FIGHTING'; value: boolean}
-  | {type: 'RESTART'}
-  | {type: 'ALLOCATE_STAT'; stat: StatType; equipBonuses?: ItemStats}
-  | {type: 'UPDATE_EQUIPMENT'; equipBonuses: ItemStats}
-
-const createInitialState = (user?: User): GameState => ({
-  user: user || createInitialUser(),
-  monster: createMonster(1),
-  currentStage: 1,
-  isFighting: true,
-  userAttackTimer: 0,
-  monsterAttackTimer: 0,
-  respawnTimer: 0,
-  userAttacked: undefined,
-  monsterAttacked: undefined,
-  goldGained: undefined
-})
-
-function processTick(state: GameState, deltaMs: number): GameState {
-  let {user, monster, currentStage, userAttackTimer, monsterAttackTimer, respawnTimer} = state
-  let userAttacked = undefined
-  let monsterAttacked = undefined
-  let goldGained = undefined
-
-  if (respawnTimer > 0) {
-    respawnTimer -= deltaMs
-    if (respawnTimer <= 0) {
-      respawnTimer = 0
-      monster = createMonster(currentStage)
-    }
-
-    return {
-      ...state,
-      respawnTimer,
-      monster
-    }
-  }
-
-  if (user.health > 0 && monster.health > 0) {
-    userAttackTimer += deltaMs
-    monsterAttackTimer += deltaMs
-
-    if (userAttackTimer >= user.attackSpeed) {
-      userAttackTimer -= user.attackSpeed
-      const damageDealt = calculateDamageDealt(user.damage)
-      const monsterNewHealth = healthAfterAttack(monster.health, damageDealt)
-      monster = {...monster, health: monsterNewHealth}
-      userAttacked = damageDealt
-
-      if (monsterNewHealth <= 0) {
-        const expGain = monster.expGain
-        const newExp = user.experience + expGain
-
-        if (newExp >= user.experienceToNextLevel) {
-          const newLevel = user.level + 1
-          user = {
-            ...user,
-            experience: newExp - user.experienceToNextLevel,
-            level: newLevel,
-            experienceToNextLevel: calculateExpToNextLevel(newLevel),
-            health: user.maxHealth,
-            statPoints: user.statPoints + STAT_POINTS_PER_LEVEL
-          }
-        } else {
-          user = {...user, experience: newExp}
-        }
-
-        goldGained = calculateGoldGain(monster.goldGain)
-        user.gold += goldGained
-        currentStage += 1
-        respawnTimer = RESPAWN_DELAY
-        monsterAttackTimer = 0
-      }
-    }
-
-    if (monster.health > 0 && monsterAttackTimer >= monster.attackSpeed) {
-      monsterAttackTimer -= monster.attackSpeed
-      const damageDealt = calculateDamageDealt(monster.damage)
-      const userNewHealth = healthAfterAttack(user.health, damageDealt)
-      user = {...user, health: userNewHealth}
-      monsterAttacked = damageDealt
-
-      if (userNewHealth <= 0) {
-        return {
-          ...state,
-          user,
-          monster,
-          isFighting: false,
-          userAttackTimer: 0,
-          monsterAttackTimer: 0,
-          respawnTimer: 0,
-          userAttacked,
-          monsterAttacked,
-          goldGained: undefined
-        }
-      }
-    }
-  }
-
-  return {
-    ...state,
-    user,
-    monster,
-    currentStage,
-    userAttackTimer,
-    monsterAttackTimer,
-    respawnTimer,
-    userAttacked,
-    monsterAttacked,
-    goldGained
-  }
-}
-
-function gameReducer(state: GameState, action: GameAction): GameState {
-  switch (action.type) {
-    case 'TICK': {
-      if (!state.isFighting) return state
-      return processTick(state, action.deltaMs)
-    }
-
-    case 'SET_FIGHTING':
-      return {...state, isFighting: action.value}
-
-    case 'RESTART':
-      return createInitialState({
-        ...state.user,
-        health: state.user.maxHealth
-      })
-
-    case 'ALLOCATE_STAT': {
-      if (state.user.statPoints <= 0) return state
-
-      const updatedUser = {
-        ...state.user,
-        [action.stat]: state.user[action.stat] + 1,
-        statPoints: state.user.statPoints - 1
-      }
-
-      const effectiveStats = calculateEffectiveStats(updatedUser, action.equipBonuses)
-      const oldMaxHealth = state.user.maxHealth
-      const newMaxHealth = effectiveStats.maxHealth
-      const healthIncrease = newMaxHealth - oldMaxHealth
-
-      return {
-        ...state,
-        user: {
-          ...updatedUser,
-          damage: effectiveStats.damage,
-          attackSpeed: effectiveStats.attackSpeed,
-          maxHealth: newMaxHealth,
-          health: Math.min(updatedUser.health + healthIncrease, newMaxHealth)
-        }
-      }
-    }
-
-    case 'UPDATE_EQUIPMENT': {
-      const effectiveStats = calculateEffectiveStats(state.user, action.equipBonuses)
-      const oldMaxHealth = state.user.maxHealth
-      const newMaxHealth = effectiveStats.maxHealth
-      const healthDiff = newMaxHealth - oldMaxHealth
-
-      return {
-        ...state,
-        user: {
-          ...state.user,
-          damage: effectiveStats.damage,
-          attackSpeed: effectiveStats.attackSpeed,
-          maxHealth: newMaxHealth,
-          health: Math.min(Math.max(1, state.user.health + healthDiff), newMaxHealth)
-        }
-      }
-    }
-
-    default:
-      return state
-  }
-}
-
 export default function IdleFightScreen() {
-  const [state, dispatch] = useReducer(gameReducer, undefined, createInitialState)
+  const state = useGameState()
+  const dispatch = useGameDispatch()
   const {user, monster, currentStage, isFighting, respawnTimer, userAttacked, monsterAttacked, goldGained} = state
   const [statsModalVisible, setStatsModalVisible] = useState(false)
   const {equipmentBonuses} = useInventory()
 
   useEffect(() => {
     dispatch({type: 'UPDATE_EQUIPMENT', equipBonuses: equipmentBonuses})
-  }, [equipmentBonuses])
+  }, [equipmentBonuses, dispatch])
 
   const {
     userAnimatedStyle,
@@ -342,12 +98,12 @@ export default function IdleFightScreen() {
     }, TICK_RATE)
 
     return () => stopGameLoop()
-  }, [isFighting])
+  }, [isFighting, dispatch])
 
   const handleRestart = useCallback(() => {
     resetAnimations()
     dispatch({type: 'RESTART'})
-  }, [resetAnimations])
+  }, [resetAnimations, dispatch])
 
   const isMonsterDead = monster.health <= 0
 
@@ -357,7 +113,7 @@ export default function IdleFightScreen() {
     (stat: StatType) => {
       dispatch({type: 'ALLOCATE_STAT', stat, equipBonuses: equipmentBonuses})
     },
-    [equipmentBonuses]
+    [equipmentBonuses, dispatch]
   )
 
   return (

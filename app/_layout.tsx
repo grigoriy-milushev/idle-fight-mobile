@@ -4,6 +4,7 @@ import {StatusBar} from 'expo-status-bar'
 import {PaperProvider} from 'react-native-paper'
 import 'react-native-reanimated'
 
+import {GameProvider} from '@/contexts/GameContext'
 import {InventoryProvider} from '@/contexts/InventoryContext'
 import {useColorScheme} from '@/hooks/use-color-scheme'
 import {SafeAreaProvider} from 'react-native-safe-area-context'
@@ -18,14 +19,16 @@ export default function RootLayout() {
   return (
     <PaperProvider>
       <SafeAreaProvider>
-        <InventoryProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{headerShown: false}} />
-            </Stack>
-            <StatusBar style="auto" />
-          </ThemeProvider>
-        </InventoryProvider>
+        <GameProvider>
+          <InventoryProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{headerShown: false}} />
+              </Stack>
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </InventoryProvider>
+        </GameProvider>
       </SafeAreaProvider>
     </PaperProvider>
   )

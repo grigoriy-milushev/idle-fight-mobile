@@ -41,8 +41,8 @@ export const calculateEffectiveStats = (user: User, equipBonuses?: ItemStats) =>
 
   return {
     damage: {
-      from: BASE_DAMAGE.from + 20 + strengthDmgBonus + (equipBonuses?.damage?.from ?? 0),
-      to: BASE_DAMAGE.to + 20 + strengthDmgBonus + (equipBonuses?.damage?.to ?? 0)
+      from: BASE_DAMAGE.from + strengthDmgBonus + (equipBonuses?.damage?.from ?? 0),
+      to: BASE_DAMAGE.to + strengthDmgBonus + (equipBonuses?.damage?.to ?? 0)
     },
     attackSpeed: Math.max(
       BASE_ATTACK_SPEED - calculateAttackSpeedFromStats(user.agility) + (equipBonuses?.attackSpeed ?? 0),

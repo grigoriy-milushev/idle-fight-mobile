@@ -1,4 +1,5 @@
 import {EQUIPMENT_SLOTS, getItemDefinition, RARITY_COLORS} from '@/constants/items'
+import {useGameDispatch} from '@/contexts/GameContext'
 import {useInventory} from '@/contexts/InventoryContext'
 import {EquipmentSlotType, InventoryItem, ItemDefinition} from '@/types/game'
 import React, {useCallback, useMemo, useState} from 'react'
@@ -119,7 +120,8 @@ function BackpackGrid({
 }
 
 export default function InventoryScreen() {
-  const {equipped, inventory, setEquipped, setInventory} = useInventory()
+  const {equipped, inventory, equipmentBonuses, setEquipped, setInventory} = useInventory()
+  const dispatch = useGameDispatch()
   const [dialogItem, setDialogItem] = useState<{item: InventoryItem; isEquipped: boolean} | null>(null)
 
   // TODO: too complex, simplify this
@@ -143,7 +145,7 @@ export default function InventoryScreen() {
     setDialogItem({item, isEquipped})
   }, [])
 
-  // Confirm equip/unequip
+  // Confirm equip/unequip/use
   //TODO: no notifications for errors of empty space
   const handleConfirmAction = useCallback(() => {
     if (!dialogItem) return
@@ -151,6 +153,18 @@ export default function InventoryScreen() {
     const {item, isEquipped} = dialogItem
     const definition = getItemDefinition(item.definitionId)
     if (!definition) return
+
+    if (definition.consumableEffect) {
+      dispatch({
+        type: 'ALLOCATE_STAT',
+        stat: definition.consumableEffect.stat,
+        amount: definition.consumableEffect.amount,
+        equipBonuses: equipmentBonuses
+      })
+      setInventory((prev) => prev.filter((i) => i.instanceId !== item.instanceId))
+      setDialogItem(null)
+      return
+    }
 
     if (isEquipped && hasRoom()) {
       const slotType = (Object.keys(equipped) as EquipmentSlotType[]).find(
@@ -160,7 +174,7 @@ export default function InventoryScreen() {
         setEquipped((prev) => ({...prev, [slotType]: null}))
         setInventory((prev) => [...prev, item])
       }
-    } else {
+    } else if (definition.slot) {
       let targetSlot = definition.slot
 
       // For rings, check which slot is available
@@ -186,7 +200,7 @@ export default function InventoryScreen() {
     }
 
     setDialogItem(null)
-  }, [dialogItem, equipped, hasRoom, setEquipped, setInventory])
+  }, [dialogItem, equipped, equipmentBonuses, hasRoom, setEquipped, setInventory, dispatch])
 
   // ----------------------------------------------------------------------------
 
@@ -195,19 +209,20 @@ export default function InventoryScreen() {
     if (!dialogItem) return null
     const definition = getItemDefinition(dialogItem.item.definitionId)
     if (!definition) return null
-    const {name, icon, rarity, description, stats} = definition
+    const {name, icon, rarity, description, stats, consumableEffect} = definition
 
-    const action = dialogItem.isEquipped ? 'Unequip' : 'Equip'
+    const action = !!consumableEffect ? 'Use' : dialogItem.isEquipped ? 'Unequip' : 'Equip'
     const rarityColor = RARITY_COLORS[rarity]
 
-    //TODO: Think of better way, not so iffy
-    // Format stats
     const statsDescription: string[] = []
+    if (consumableEffect) {
+      const statLabel = consumableEffect.stat.charAt(0).toUpperCase() + consumableEffect.stat.slice(1)
+      statsDescription.push(`${statLabel}: +${consumableEffect.amount}`)
+    }
     if (stats.damage) statsDescription.push(`Damage: ${stats.damage.from}-${stats.damage.to}`)
     if (stats.armor) statsDescription.push(`Armor: ${stats.armor}`)
     if (stats.maxHealth) statsDescription.push(`Max Health: +${stats.maxHealth}`)
     if (stats.attackSpeed) {
-      // TODO: not sure do we want positive and negative
       statsDescription.push(`Attack Speed: ${stats.attackSpeed < 0 ? '' : '+'}${stats.attackSpeed}ms`)
     }
 

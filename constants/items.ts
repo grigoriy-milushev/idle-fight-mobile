@@ -331,6 +331,37 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'legendary',
     stats: {damage: {from: 5, to: 8}, attackSpeed: -100},
     description: 'Channels raw fury into power.'
+  },
+
+  // ============================================================================
+  // CONSUMABLES
+  // ============================================================================
+  book_of_strength: {
+    id: 'book_of_strength',
+    name: 'Book of Strength',
+    icon: '📕',
+    rarity: 'rare',
+    stats: {},
+    description: 'Ancient knowledge grants +1 Strength permanently.',
+    consumableEffect: {stat: 'strength', amount: 1}
+  },
+  book_of_agility: {
+    id: 'book_of_agility',
+    name: 'Book of Agility',
+    icon: '📗',
+    rarity: 'rare',
+    stats: {},
+    description: 'Ancient knowledge grants +1 Agility permanently.',
+    consumableEffect: {stat: 'agility', amount: 1}
+  },
+  book_of_vitality: {
+    id: 'book_of_vitality',
+    name: 'Book of Vitality',
+    icon: '📘',
+    rarity: 'rare',
+    stats: {},
+    description: 'Ancient knowledge grants +1 Vitality permanently.',
+    consumableEffect: {stat: 'vitality', amount: 1}
   }
 }
 
