@@ -15,8 +15,7 @@ export const EQUIPMENT_SLOTS = {
   armor: {label: 'Armor', icon: '🧥'},
   offhand: {label: 'Offhand', icon: '🛡️'},
   gloves: {label: 'Gloves', icon: '🧤'},
-  ring1: {label: 'Ring', icon: '💍'},
-  ring2: {label: 'Ring', icon: '💍'},
+  ring: {label: 'Ring', icon: '💍'},
   boots: {label: 'Boots', icon: '🥾'}
 }
 
@@ -269,7 +268,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     id: 'copper_ring',
     name: 'Copper Ring',
     icon: '💍',
-    slot: 'ring1', // Can be equipped in either ring slot
+    slot: 'ring',
     rarity: 'common',
     stats: {maxHealth: 5},
     description: 'A simple copper band.'
@@ -278,7 +277,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     id: 'silver_ring',
     name: 'Silver Ring',
     icon: '💍',
-    slot: 'ring1',
+    slot: 'ring',
     rarity: 'magic',
     stats: {maxHealth: 10},
     description: 'A polished silver ring.'
@@ -287,7 +286,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     id: 'ring_of_power',
     name: 'Ring of Power',
     icon: '💍',
-    slot: 'ring1',
+    slot: 'ring',
     rarity: 'rare',
     stats: {damage: {from: 2, to: 4}},
     description: 'Grants immense strength.'
@@ -296,7 +295,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     id: 'ring_of_speed',
     name: 'Ring of Speed',
     icon: '💍',
-    slot: 'ring1',
+    slot: 'ring',
     rarity: 'rare',
     stats: {attackSpeed: -50},
     description: 'Quickens your movements.'
@@ -376,7 +375,6 @@ export const createEmptyEquippedItems = () => ({
   boots: null,
   weapon: null,
   offhand: null,
-  ring1: null,
-  ring2: null,
+  ring: null,
   amulet: null
 })

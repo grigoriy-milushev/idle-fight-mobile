@@ -60,8 +60,7 @@ export type EquipmentSlotType =
   | 'boots'
   | 'weapon'
   | 'offhand'
-  | 'ring1'
-  | 'ring2'
+  | 'ring'
   | 'amulet'
 
 export interface ItemStats {
@@ -94,7 +93,6 @@ export interface EquippedItems {
   boots: InventoryItem | null
   weapon: InventoryItem | null
   offhand: InventoryItem | null
-  ring1: InventoryItem | null
-  ring2: InventoryItem | null
+  ring: InventoryItem | null
   amulet: InventoryItem | null
 }

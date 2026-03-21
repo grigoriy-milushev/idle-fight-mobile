@@ -155,14 +155,6 @@ export default function InventoryScreen() {
     } else if (definition.slot) {
       let targetSlot: EquipmentSlotType = definition.slot
 
-      if (definition.slot === 'ring1') {
-        if (equipped.ring1 === null) {
-          targetSlot = 'ring1'
-        } else if (equipped.ring2 === null) {
-          targetSlot = 'ring2'
-        }
-      }
-
       dispatch({type: 'EQUIP_ITEM', item, targetSlot})
     }
 
@@ -215,7 +207,7 @@ export default function InventoryScreen() {
             <View style={styles.equipmentRow}>
               <View style={[styles.equipmentCell, {width: cellSize}]} />
               <EquipmentSlot item={equipped.helmet} slotInfo={EQUIPMENT_SLOTS.helmet} onTap={handleTap} />
-              <EquipmentSlot item={equipped.amulet} slotInfo={EQUIPMENT_SLOTS.amulet} onTap={handleTap} />
+              <View style={[styles.equipmentCell, {width: cellSize}]} />
             </View>
 
             {/* Row 1: Weapon, Armor, Offhand */}
@@ -225,11 +217,11 @@ export default function InventoryScreen() {
               <EquipmentSlot item={equipped.offhand} slotInfo={EQUIPMENT_SLOTS.offhand} onTap={handleTap} />
             </View>
 
-            {/* Row 2: Gloves, Ring1, Ring2 */}
+            {/* Row 2: Gloves, Ring */}
             <View style={styles.equipmentRow}>
               <EquipmentSlot item={equipped.gloves} slotInfo={EQUIPMENT_SLOTS.gloves} onTap={handleTap} />
-              <EquipmentSlot item={equipped.ring1} slotInfo={EQUIPMENT_SLOTS.ring1} onTap={handleTap} />
-              <EquipmentSlot item={equipped.ring2} slotInfo={EQUIPMENT_SLOTS.ring2} onTap={handleTap} />
+              <EquipmentSlot item={equipped.ring} slotInfo={EQUIPMENT_SLOTS.ring} onTap={handleTap} />
+              <EquipmentSlot item={equipped.amulet} slotInfo={EQUIPMENT_SLOTS.amulet} onTap={handleTap} />
             </View>
 
             {/* Row 3: Boots */}
