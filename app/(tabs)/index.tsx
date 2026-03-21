@@ -4,7 +4,8 @@ import {ProgressBarWithText} from '@/components/ui/ProgressBarWithText'
 import {useGameDispatch, useGameState} from '@/contexts/GameContext'
 import {useFightAnimations} from '@/hooks/useFightAnimations'
 import {StatType, User} from '@/types/game'
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {useIsFocused} from '@react-navigation/native'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {Button, Card, Chip, IconButton, Surface, Text} from 'react-native-paper'
 import Animated from 'react-native-reanimated'
@@ -63,6 +64,8 @@ export default function IdleFightScreen() {
     resetAnimations
   } = useFightAnimations(userAttacked, monsterAttacked, goldGained)
 
+  const isFocused = useIsFocused()
+
   // Game loop refs
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastTickRef = useRef<number>(Date.now())
@@ -76,7 +79,7 @@ export default function IdleFightScreen() {
 
   // Game loop
   useEffect(() => {
-    if (!isFighting) {
+    if (!isFighting || !isFocused) {
       console.log('stopping game loop')
       stopGameLoop()
       return
@@ -92,7 +95,7 @@ export default function IdleFightScreen() {
     }, TICK_RATE)
 
     return () => stopGameLoop()
-  }, [isFighting, dispatch])
+  }, [isFighting, isFocused, dispatch])
 
   const handleRestart = useCallback(() => {
     resetAnimations()
