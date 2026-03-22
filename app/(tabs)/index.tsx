@@ -181,13 +181,20 @@ export default function IdleFightScreen() {
       <View style={styles.userSection}>
         <Card style={styles.userCard}>
           <Card.Content style={styles.userContent}>
-            <IconButton
-              icon="account-details"
-              iconColor="#4a90e2"
-              size={24}
-              onPress={() => setStatsModalVisible(true)}
-              style={styles.statsIconButton}
-            />
+            <View style={styles.statsIconButton}>
+              <IconButton
+                icon="account-details"
+                iconColor="#4a90e2"
+                size={24}
+                onPress={() => setStatsModalVisible(true)}
+                style={{margin: 0}}
+              />
+              {user.statPoints > 0 && (
+                <View style={styles.statBadge}>
+                  <Text style={styles.statBadgeText}>{user.statPoints}</Text>
+                </View>
+              )}
+            </View>
             <View style={styles.avatarWrapper}>
               <Animated.View style={[styles.userPlaceholder, userAnimatedStyle]}>
                 <Text variant="displayLarge">⚔️</Text>
@@ -344,7 +351,23 @@ const styles = StyleSheet.create({
   statsIconButton: {
     position: 'absolute',
     top: 0,
-    right: 0,
-    margin: 0
+    right: 0
+  },
+  statBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#4caf50',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4
+  },
+  statBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold'
   }
 })
