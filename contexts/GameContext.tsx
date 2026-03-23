@@ -59,7 +59,8 @@ const createInitialUser = (): User => {
     gold: 0,
     damage: {from: BASE_DAMAGE.from, to: BASE_DAMAGE.to},
     attackSpeed: BASE_ATTACK_SPEED,
-    maxHealth: BASE_MAX_HEALTH
+    maxHealth: BASE_MAX_HEALTH,
+    armor: 0
   }
 
   const effectiveStats = calculateEffectiveStats(baseUser as User)
@@ -69,7 +70,8 @@ const createInitialUser = (): User => {
     health: effectiveStats.maxHealth,
     maxHealth: effectiveStats.maxHealth,
     damage: effectiveStats.damage,
-    attackSpeed: effectiveStats.attackSpeed
+    attackSpeed: effectiveStats.attackSpeed,
+    armor: effectiveStats.armor
   }
 }
 
@@ -151,7 +153,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
 
     if (monster.health > 0 && monsterAttackTimer >= monster.attackSpeed) {
       monsterAttackTimer -= monster.attackSpeed
-      const damageDealt = calculateDamageDealt(monster.damage)
+      const damageDealt = calculateDamageDealt(monster.damage, user.armor)
       const userNewHealth = healthAfterAttack(user.health, damageDealt)
       user = {...user, health: userNewHealth}
       monsterAttacked = damageDealt
@@ -241,6 +243,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           damage: effectiveStats.damage,
           attackSpeed: effectiveStats.attackSpeed,
           maxHealth: effectiveStats.maxHealth,
+          armor: effectiveStats.armor,
           health: Math.min(updatedUser.health + healthIncrease, effectiveStats.maxHealth)
         }
       }
@@ -266,6 +269,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           damage: effectiveStats.damage,
           attackSpeed: effectiveStats.attackSpeed,
           maxHealth: effectiveStats.maxHealth,
+          armor: effectiveStats.armor,
           health: Math.min(Math.max(1, state.user.health + healthDiff), effectiveStats.maxHealth)
         }
       }
@@ -288,6 +292,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           damage: effectiveStats.damage,
           attackSpeed: effectiveStats.attackSpeed,
           maxHealth: effectiveStats.maxHealth,
+          armor: effectiveStats.armor,
           health: Math.min(Math.max(1, state.user.health + healthDiff), effectiveStats.maxHealth)
         }
       }

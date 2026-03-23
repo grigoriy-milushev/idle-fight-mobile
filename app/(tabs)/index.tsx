@@ -19,7 +19,8 @@ const createHeroStatsSections = (user: User): StatsSection[] => [
       {label: 'Level', value: user.level},
       {label: 'Attack Damage', value: `${user.damage.from} - ${user.damage.to}`},
       {label: 'Attack Speed', value: `${user.attackSpeed / 1000}s`},
-      {label: 'Max Health', value: user.maxHealth}
+      {label: 'Max Health', value: user.maxHealth},
+      {label: 'Armor', value: user.armor}
     ]
   },
   {

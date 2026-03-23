@@ -2,7 +2,6 @@ import {getItemDefinition} from '@/constants/items'
 import {Demage, EquippedItems, ItemStats, User} from '@/types/game'
 
 export const calculateExpToNextLevel = (level: number): number => Math.floor(100 * Math.pow(1.5, level - 1))
-export const calculateDamageDealt = ({from, to}: Demage) => Math.floor(Math.random() * (to - from + 1)) + from
 export const healthAfterAttack = (health: number, damage: number) => Math.max(0, health - damage)
 
 export const calculateDamageFromStats = (strength: number): number => Math.floor(strength / 3)
@@ -12,6 +11,8 @@ export const calculateMaxHealthFromStats = (vitality: number): number => vitalit
 export const BASE_DAMAGE = {from: 1, to: 3}
 export const BASE_ATTACK_SPEED = 1000
 export const BASE_MAX_HEALTH = 100
+const ARMOR_CONSTANT = 30
+const MAX_ARMOR_REDUCTION = 0.8
 
 export const calculateEquipmentBonuses = (equipped: EquippedItems): ItemStats => {
   const bonuses: ItemStats = {}
@@ -48,11 +49,23 @@ export const calculateEffectiveStats = (user: User, equipBonuses?: ItemStats) =>
       BASE_ATTACK_SPEED - calculateAttackSpeedFromStats(user.agility) + (equipBonuses?.attackSpeed ?? 0),
       100
     ),
-    maxHealth: BASE_MAX_HEALTH + calculateMaxHealthFromStats(user.vitality) + (equipBonuses?.maxHealth ?? 0)
+    maxHealth: BASE_MAX_HEALTH + calculateMaxHealthFromStats(user.vitality) + (equipBonuses?.maxHealth ?? 0),
+    armor: equipBonuses?.armor ?? 0
   }
 }
 
 export const calculateGoldGain = (maxGold: number): number => {
   const minGold = Math.floor(maxGold * 0.1)
   return Math.floor(Math.random() * (maxGold - minGold + 1)) + minGold
+}
+
+// DAMAGE CALCULATIONS
+export const calculateDamageDealt = ({from, to}: Demage, armor?: number) => {
+  const rawDamage = Math.floor(Math.random() * (to - from + 1)) + from
+  return calculateDamageAfterArmor(rawDamage, armor)
+}
+
+const getArmorReduction = (armor: number): number => Math.min(armor / (armor + ARMOR_CONSTANT), MAX_ARMOR_REDUCTION)
+const calculateDamageAfterArmor = (rawDamage: number, armor?: number): number => {
+  return armor ? Math.max(1, Math.round(rawDamage * (1 - getArmorReduction(armor)))) : rawDamage
 }

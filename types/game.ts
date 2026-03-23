@@ -15,6 +15,7 @@ export interface User {
   maxHealth: number
   damage: Demage
   attackSpeed: number
+  armor: number
   experience: number
   level: number
   experienceToNextLevel: number
