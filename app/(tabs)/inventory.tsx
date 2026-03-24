@@ -140,7 +140,7 @@ export default function InventoryScreen() {
     if (!definition) return
 
     if (definition.consumableEffect) {
-      dispatch({type: 'ALLOCATE_STAT', stat: definition.consumableEffect.stat, instanceId: item.instanceId})
+      dispatch({type: 'USE_CONSUMABLE', item})
       setDialogItem(null)
       return
     }
@@ -161,8 +161,6 @@ export default function InventoryScreen() {
     setDialogItem(null)
   }, [dialogItem, equipped, dispatch])
 
-  // ----------------------------------------------------------------------------
-
   // Get dialog info
   const dialogInfo = useMemo(() => {
     if (!dialogItem) return null
@@ -175,8 +173,12 @@ export default function InventoryScreen() {
 
     const statsDescription: string[] = []
     if (consumableEffect) {
-      const statLabel = consumableEffect.stat.charAt(0).toUpperCase() + consumableEffect.stat.slice(1)
-      statsDescription.push(`${statLabel}: +${consumableEffect.amount}`)
+      if (consumableEffect.type === 'stat_boost') {
+        const statLabel = consumableEffect.stat.charAt(0).toUpperCase() + consumableEffect.stat.slice(1)
+        statsDescription.push(`${statLabel}: +${consumableEffect.amount}`)
+      } else if (consumableEffect.type === 'heal') {
+        statsDescription.push(`Restores ${consumableEffect.amount} HP`)
+      }
     }
     if (stats.damage) statsDescription.push(`Damage: ${stats.damage.from}-${stats.damage.to}`)
     if (stats.armor) statsDescription.push(`Armor: ${stats.armor}`)

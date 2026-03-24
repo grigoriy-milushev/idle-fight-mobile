@@ -71,6 +71,10 @@ export interface ItemStats {
   attackSpeed?: number // bonus/reduction in ms
 }
 
+export type ConsumableEffect =
+  | {type: 'stat_boost'; stat: StatType; amount: number}
+  | {type: 'heal'; amount: number}
+
 export interface ItemDefinition {
   id: string
   name: string
@@ -79,7 +83,7 @@ export interface ItemDefinition {
   rarity: ItemRarity
   stats: ItemStats
   description?: string
-  consumableEffect?: {stat: StatType; amount: number}
+  consumableEffect?: ConsumableEffect
 }
 
 export interface InventoryItem {

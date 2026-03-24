@@ -342,7 +342,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'rare',
     stats: {},
     description: 'Ancient knowledge grants +1 Strength permanently.',
-    consumableEffect: {stat: 'strength', amount: 1}
+    consumableEffect: {type: 'stat_boost', stat: 'strength', amount: 1}
   },
   book_of_agility: {
     id: 'book_of_agility',
@@ -351,7 +351,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'rare',
     stats: {},
     description: 'Ancient knowledge grants +1 Agility permanently.',
-    consumableEffect: {stat: 'agility', amount: 1}
+    consumableEffect: {type: 'stat_boost', stat: 'agility', amount: 1}
   },
   book_of_vitality: {
     id: 'book_of_vitality',
@@ -360,7 +360,34 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'rare',
     stats: {},
     description: 'Ancient knowledge grants +1 Vitality permanently.',
-    consumableEffect: {stat: 'vitality', amount: 1}
+    consumableEffect: {type: 'stat_boost', stat: 'vitality', amount: 1}
+  },
+  health_potion_small: {
+    id: 'health_potion_small',
+    name: 'Small Health Potion',
+    icon: '🧪',
+    rarity: 'common',
+    stats: {},
+    description: 'A small flask that restores 20 HP.',
+    consumableEffect: {type: 'heal', amount: 20}
+  },
+  health_potion_medium: {
+    id: 'health_potion_medium',
+    name: 'Medium Health Potion',
+    icon: '🧪',
+    rarity: 'magic',
+    stats: {},
+    description: 'A sturdy flask that restores 50 HP.',
+    consumableEffect: {type: 'heal', amount: 50}
+  },
+  health_potion_large: {
+    id: 'health_potion_large',
+    name: 'Large Health Potion',
+    icon: '🧪',
+    rarity: 'rare',
+    stats: {},
+    description: 'A potent flask that restores 100 HP.',
+    consumableEffect: {type: 'heal', amount: 100}
   }
 }
 
