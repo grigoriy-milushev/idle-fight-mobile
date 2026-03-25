@@ -143,15 +143,8 @@ export default function IdleFightScreen() {
   }, [resetAnimations, dispatch])
 
   const isMonsterDead = monster.health <= 0
-
   const heroStatsSections = useMemo(() => createHeroStatsSections(user), [user])
-
-  const handleAllocateStat = useCallback(
-    (stat: StatType) => {
-      dispatch({type: 'ALLOCATE_STAT', stat})
-    },
-    [dispatch]
-  )
+  const handleAllocateStat = useCallback((stat: StatType) => dispatch({type: 'ALLOCATE_STAT', stat}), [dispatch])
 
   const handleUsePocketPotion = useCallback(
     (slot: 'pocket1' | 'pocket2') => dispatch({type: 'USE_POTION', slot}),
