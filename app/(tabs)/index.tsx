@@ -99,6 +99,7 @@ export default function IdleFightScreen() {
     monsterAnimatedStyle,
     monsterNumbers,
     userNumbers,
+    showFloatingNumber,
     removeMonsterDamage,
     removeUserDamage,
     resetAnimations
@@ -147,8 +148,19 @@ export default function IdleFightScreen() {
   const handleAllocateStat = useCallback((stat: StatType) => dispatch({type: 'ALLOCATE_STAT', stat}), [dispatch])
 
   const handleUsePocketPotion = useCallback(
-    (slot: 'pocket1' | 'pocket2') => dispatch({type: 'USE_POTION', slot}),
-    [dispatch]
+    (slot: 'pocket1' | 'pocket2') => {
+      const pocketItem = equipped[slot]
+
+      if (!pocketItem) return
+      const def = getItemDefinition(pocketItem.definitionId)
+      if (def?.consumableEffect?.type !== 'heal') return
+      const healAmount = Math.min(def.consumableEffect.amount, user.maxHealth - user.health)
+      if (healAmount <= 0) return
+
+      showFloatingNumber(healAmount, 'user', 'heal')
+      dispatch({type: 'USE_POTION', slot})
+    },
+    [dispatch, equipped, user.health, user.maxHealth, showFloatingNumber]
   )
 
   return (

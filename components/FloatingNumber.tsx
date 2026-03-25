@@ -7,7 +7,7 @@ import {scheduleOnRN} from 'react-native-worklets'
 const FLOAT_DURATION = 1000
 const FLOAT_DISTANCE = -60 // pixels upward
 
-export type FloatingNumberType = 'damage' | 'gold'
+export type FloatingNumberType = 'damage' | 'gold' | 'heal'
 
 /**
  * Component for rendering a single floating number.
@@ -40,8 +40,8 @@ export function FloatingNumber({
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
-      <Text style={type === 'gold' ? styles.goldText : styles.damageText}>
-        {type === 'gold' ? `+${value} Gold` : `-${value}`}
+      <Text style={type === 'gold' ? styles.goldText : type === 'heal' ? styles.healText : styles.damageText}>
+        {type === 'gold' ? `+${value} Gold` : type === 'heal' ? `+${value} HP` : `-${value}`}
       </Text>
     </Animated.View>
   )
@@ -65,6 +65,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#ffd700',
+    textShadowColor: '#000',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 2
+  },
+  healText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#4ade80',
     textShadowColor: '#000',
     textShadowOffset: {width: 1, height: 1},
     textShadowRadius: 2

@@ -71,6 +71,7 @@ export function useFightAnimations(userAttacked?: number, monsterAttacked?: numb
     monsterAnimatedStyle,
     monsterNumbers,
     userNumbers,
+    showFloatingNumber,
     removeMonsterDamage: useCallback((id: string) => removeFloatingNumber(id, 'opponent'), [removeFloatingNumber]),
     removeUserDamage: useCallback((id: string) => removeFloatingNumber(id, 'user'), [removeFloatingNumber]),
     resetAnimations: useCallback(() => {
