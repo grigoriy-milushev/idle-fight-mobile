@@ -16,7 +16,9 @@ export const EQUIPMENT_SLOTS = {
   offhand: {label: 'Offhand', icon: '🛡️'},
   gloves: {label: 'Gloves', icon: '🧤'},
   ring: {label: 'Ring', icon: '💍'},
-  boots: {label: 'Boots', icon: '🥾'}
+  boots: {label: 'Boots', icon: '🥾'},
+  pocket1: {label: 'Pocket', icon: '🧪'},
+  pocket2: {label: 'Pocket', icon: '🧪'}
 }
 
 // Item definitions - all available items in the game
@@ -366,6 +368,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     id: 'health_potion_small',
     name: 'Small Health Potion',
     icon: '🧪',
+    slot: 'pocket1',
     rarity: 'common',
     stats: {},
     description: 'A small flask that restores 20 HP.',
@@ -375,6 +378,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     id: 'health_potion_medium',
     name: 'Medium Health Potion',
     icon: '🧪',
+    slot: 'pocket1',
     rarity: 'magic',
     stats: {},
     description: 'A sturdy flask that restores 50 HP.',
@@ -384,6 +388,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     id: 'health_potion_large',
     name: 'Large Health Potion',
     icon: '🧪',
+    slot: 'pocket1',
     rarity: 'rare',
     stats: {},
     description: 'A potent flask that restores 100 HP.',
@@ -403,5 +408,7 @@ export const createEmptyEquippedItems = () => ({
   weapon: null,
   offhand: null,
   ring: null,
-  amulet: null
+  amulet: null,
+  pocket1: null,
+  pocket2: null
 })

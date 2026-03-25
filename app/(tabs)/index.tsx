@@ -1,12 +1,13 @@
 import {FloatingNumbersContainer} from '@/components/FloatingNumbersContainer'
 import {StatsModal, StatsSection} from '@/components/StatsModal'
 import {ProgressBarWithText} from '@/components/ui/ProgressBarWithText'
+import {RARITY_COLORS, getItemDefinition} from '@/constants/items'
 import {useGameDispatch, useGameState} from '@/contexts/GameContext'
 import {useFightAnimations} from '@/hooks/useFightAnimations'
-import {StatType, User} from '@/types/game'
+import {ConsumableEffect, InventoryItem, StatType, User} from '@/types/game'
 import {useIsFocused} from '@react-navigation/native'
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
-import {StyleSheet, View} from 'react-native'
+import {Pressable, StyleSheet, View} from 'react-native'
 import {Button, Card, Chip, IconButton, Surface, Text} from 'react-native-paper'
 import Animated from 'react-native-reanimated'
 import {SafeAreaView} from 'react-native-safe-area-context'
@@ -49,10 +50,48 @@ const createHeroStatsSections = (user: User): StatsSection[] => [
   }
 ]
 
+function PocketPotionButton({
+  item,
+  slot,
+  onUse
+}: {
+  item: InventoryItem | null
+  slot: 'pocket1' | 'pocket2'
+  onUse: (slot: 'pocket1' | 'pocket2') => void
+}) {
+  if (!item) {
+    return (
+      <View style={styles.pocketSlotEmpty}>
+        <Text style={styles.pocketSlotEmptyIcon}>🧪</Text>
+      </View>
+    )
+  }
+
+  const definition = getItemDefinition(item.definitionId)
+  if (!definition) return null
+
+  const rarityColor = RARITY_COLORS[definition.rarity]
+  const healAmount = (definition.consumableEffect as ConsumableEffect & {type: 'heal'})?.amount
+
+  return (
+    <Pressable
+      onPress={() => onUse(slot)}
+      style={({pressed}) => [
+        styles.pocketSlotFilled,
+        {borderColor: rarityColor, backgroundColor: `${rarityColor}33`, opacity: pressed ? 0.6 : 1}
+      ]}
+    >
+      <Text style={styles.pocketIcon}>{definition.icon}</Text>
+      {healAmount && <Text style={styles.pocketHealText}>+{healAmount}</Text>}
+    </Pressable>
+  )
+}
+
 export default function IdleFightScreen() {
   const state = useGameState()
   const dispatch = useGameDispatch()
-  const {user, monster, currentStage, isFighting, respawnTimer, userAttacked, monsterAttacked, goldGained} = state
+  const {user, monster, currentStage, isFighting, respawnTimer, userAttacked, monsterAttacked, goldGained, equipped} =
+    state
   const [statsModalVisible, setStatsModalVisible] = useState(false)
 
   const {
@@ -111,6 +150,11 @@ export default function IdleFightScreen() {
     (stat: StatType) => {
       dispatch({type: 'ALLOCATE_STAT', stat})
     },
+    [dispatch]
+  )
+
+  const handleUsePocketPotion = useCallback(
+    (slot: 'pocket1' | 'pocket2') => dispatch({type: 'USE_POTION', slot}),
     [dispatch]
   )
 
@@ -195,6 +239,10 @@ export default function IdleFightScreen() {
                   <Text style={styles.statBadgeText}>{user.statPoints}</Text>
                 </View>
               )}
+            </View>
+            <View style={styles.pocketSlots}>
+              <PocketPotionButton item={equipped.pocket1} slot="pocket1" onUse={handleUsePocketPotion} />
+              <PocketPotionButton item={equipped.pocket2} slot="pocket2" onUse={handleUsePocketPotion} />
             </View>
             <View style={styles.avatarWrapper}>
               <Animated.View style={[styles.userPlaceholder, userAnimatedStyle]}>
@@ -370,5 +418,44 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 11,
     fontWeight: 'bold'
+  },
+  pocketSlots: {
+    position: 'absolute',
+    top: 70,
+    right: 8,
+    gap: 6,
+    zIndex: 1
+  },
+  pocketSlotEmpty: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#444',
+    backgroundColor: '#0f3460',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  pocketSlotEmptyIcon: {
+    fontSize: 16,
+    opacity: 0.3
+  },
+  pocketSlotFilled: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  pocketIcon: {
+    fontSize: 18
+  },
+  pocketHealText: {
+    fontSize: 9,
+    color: '#4ade80',
+    fontWeight: 'bold',
+    marginTop: -2
   }
 })

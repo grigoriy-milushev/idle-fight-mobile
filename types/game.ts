@@ -63,6 +63,8 @@ export type EquipmentSlotType =
   | 'offhand'
   | 'ring'
   | 'amulet'
+  | 'pocket1'
+  | 'pocket2'
 
 export interface ItemStats {
   damage?: Demage
@@ -100,4 +102,6 @@ export interface EquippedItems {
   offhand: InventoryItem | null
   ring: InventoryItem | null
   amulet: InventoryItem | null
+  pocket1: InventoryItem | null
+  pocket2: InventoryItem | null
 }

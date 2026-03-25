@@ -22,8 +22,9 @@ export type GameAction =
   | {type: 'TICK'; deltaMs: number}
   | {type: 'SET_FIGHTING'; value: boolean}
   | {type: 'RESTART'}
-  | {type: 'ALLOCATE_STAT'; stat: StatType}
+  | {type: 'ALLOCATE_STAT'; stat: StatType; item?: InventoryItem}
   | {type: 'USE_CONSUMABLE'; item: InventoryItem}
+  | {type: 'USE_POTION'; slot: 'pocket1' | 'pocket2'}
   | {type: 'EQUIP_ITEM'; item: InventoryItem; targetSlot: EquipmentSlotType}
   | {type: 'UNEQUIP_ITEM'; slotType: EquipmentSlotType}
 
@@ -219,11 +220,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
     case 'ALLOCATE_STAT': {
-      if (state.user.statPoints <= 0) return state
+      if (state.user.statPoints <= 0 && !action.item) return state
+      const {stat, item} = action
+      let amount = 1
+
+      if (item) {
+        const definition = getItemDefinition(item.definitionId)
+        if (definition?.consumableEffect?.type === 'stat_boost') amount = definition.consumableEffect.amount
+      }
+
       const updatedUser = {
         ...state.user,
-        [action.stat]: state.user[action.stat] + 1,
-        statPoints: state.user.statPoints - 1
+        [stat]: state.user[stat] + amount,
+        ...(item ? {} : {statPoints: state.user.statPoints - 1})
       }
 
       const effectiveStats = applyEffectiveStats(updatedUser, state.equipped)
@@ -231,6 +240,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
+        inventory: item ? state.inventory.filter((i) => i.instanceId !== item.instanceId) : state.inventory,
         user: {
           ...updatedUser,
           damage: effectiveStats.damage,
@@ -242,44 +252,28 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
     }
 
-    case 'USE_CONSUMABLE': {
-      const definition = getItemDefinition(action.item.definitionId)
-      const effect = definition?.consumableEffect
-      if (!effect) return state
-      const inventoryAfterUse = state.inventory.filter((i) => i.instanceId !== action.item.instanceId)
+    case 'USE_POTION': {
+      const pocketItem = state.equipped[action.slot]
+      if (!pocketItem) return state
 
-      if (effect.type === 'heal') {
-        return {
-          ...state,
-          inventory: inventoryAfterUse,
-          user: {...state.user, health: Math.min(state.user.health + effect.amount, state.user.maxHealth)}
+      const item = getItemDefinition(pocketItem.definitionId)
+      if (!item?.consumableEffect || item.consumableEffect.type !== 'heal') return state
+
+      return {
+        ...state,
+        equipped: {...state.equipped, [action.slot]: null},
+        user: {
+          ...state.user,
+          health: Math.min(state.user.health + item.consumableEffect.amount, state.user.maxHealth)
         }
       }
-
-      if (effect.type === 'stat_boost') {
-        const updatedUser = {...state.user, [effect.stat]: state.user[effect.stat] + effect.amount}
-        const effectiveStats = applyEffectiveStats(updatedUser, state.equipped)
-        const healthIncrease = effectiveStats.maxHealth - state.user.maxHealth
-
-        return {
-          ...state,
-          inventory: inventoryAfterUse,
-          user: {
-            ...updatedUser,
-            damage: effectiveStats.damage,
-            attackSpeed: effectiveStats.attackSpeed,
-            maxHealth: effectiveStats.maxHealth,
-            armor: effectiveStats.armor,
-            health: Math.min(updatedUser.health + healthIncrease, effectiveStats.maxHealth)
-          }
-        }
-      }
-
-      return state
     }
 
     case 'EQUIP_ITEM': {
-      const {item, targetSlot} = action
+      const {item} = action
+      let targetSlot = action.targetSlot
+      if (targetSlot === 'pocket1' && state.equipped.pocket1 && !state.equipped.pocket2) targetSlot = 'pocket2'
+
       const prevEquippedItem = state.equipped[targetSlot]
       const inventoryAfterRemoval = state.inventory.filter((i) => i.instanceId !== item.instanceId)
 

@@ -139,8 +139,8 @@ export default function InventoryScreen() {
     const definition = getItemDefinition(item.definitionId)
     if (!definition) return
 
-    if (definition.consumableEffect) {
-      dispatch({type: 'USE_CONSUMABLE', item})
+    if (definition.consumableEffect?.type === 'stat_boost') {
+      dispatch({type: 'ALLOCATE_STAT', stat: definition.consumableEffect.stat, item})
       setDialogItem(null)
       return
     }
@@ -168,7 +168,7 @@ export default function InventoryScreen() {
     if (!definition) return null
     const {name, icon, rarity, description, stats, consumableEffect} = definition
 
-    const action = !!consumableEffect ? 'Use' : dialogItem.isEquipped ? 'Unequip' : 'Equip'
+    const action = consumableEffect?.type === 'stat_boost' ? 'Use' : dialogItem.isEquipped ? 'Unequip' : 'Equip'
     const rarityColor = RARITY_COLORS[rarity]
 
     const statsDescription: string[] = []
@@ -226,11 +226,11 @@ export default function InventoryScreen() {
               <EquipmentSlot item={equipped.amulet} slotInfo={EQUIPMENT_SLOTS.amulet} onTap={handleTap} />
             </View>
 
-            {/* Row 3: Boots */}
+            {/* Row 3: Boots, Pockets */}
             <View style={styles.equipmentRow}>
-              <View style={[styles.equipmentCell, {width: cellSize}]} />
+              <EquipmentSlot item={equipped.pocket1} slotInfo={EQUIPMENT_SLOTS.pocket1} onTap={handleTap} />
               <EquipmentSlot item={equipped.boots} slotInfo={EQUIPMENT_SLOTS.boots} onTap={handleTap} />
-              <View style={[styles.equipmentCell, {width: cellSize}]} />
+              <EquipmentSlot item={equipped.pocket2} slotInfo={EQUIPMENT_SLOTS.pocket2} onTap={handleTap} />
             </View>
           </View>
         </View>
