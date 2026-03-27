@@ -61,7 +61,7 @@ function PocketPotionButton({
 }) {
   if (!item) {
     return (
-      <View style={styles.pocketSlotEmpty}>
+      <View style={[styles.pocketSlotBase, styles.pocketSlotEmpty]}>
         <Text style={styles.pocketSlotEmptyIcon}>🧪</Text>
       </View>
     )
@@ -77,6 +77,7 @@ function PocketPotionButton({
     <Pressable
       onPress={() => onUse(slot)}
       style={({pressed}) => [
+        styles.pocketSlotBase,
         styles.pocketSlotFilled,
         {borderColor: rarityColor, backgroundColor: `${rarityColor}33`, opacity: pressed ? 0.6 : 1}
       ]}
@@ -172,20 +173,20 @@ export default function IdleFightScreen() {
         </Chip>
       </Surface>
       <View style={styles.monsterSection}>
-        <Card style={styles.monsterCard}>
-          <Card.Content style={styles.monsterContent}>
-            <Text variant="headlineSmall" style={styles.monsterLabel}>
+        <Card style={styles.fighterCard}>
+          <Card.Content style={styles.fighterContent}>
+            <Text variant="headlineSmall" style={[styles.fighterLabel, styles.monsterLabel]}>
               Stage {currentStage}
             </Text>
             <View style={styles.avatarWrapper}>
               <Animated.View
-                style={[styles.monsterPlaceholder, monsterAnimatedStyle, isMonsterDead && styles.deadPlaceholder]}
+                style={[styles.fighterPlaceholder, styles.monsterPlaceholder, monsterAnimatedStyle, isMonsterDead && styles.deadPlaceholder]}
               >
                 <Text variant="displayLarge">{isMonsterDead ? '💀' : monster.img}</Text>
               </Animated.View>
               <FloatingNumbersContainer numbers={monsterNumbers} onFloatingComplete={removeMonsterDamage} />
             </View>
-            <Text variant="headlineSmall" style={styles.userLabel}>
+            <Text variant="headlineSmall" style={styles.fighterLabel}>
               {monster.name}
             </Text>
             <ProgressBarWithText current={monster.health} maxNumber={monster.maxHealth} />
@@ -229,8 +230,8 @@ export default function IdleFightScreen() {
       </View>
 
       <View style={styles.userSection}>
-        <Card style={styles.userCard}>
-          <Card.Content style={styles.userContent}>
+        <Card style={styles.fighterCard}>
+          <Card.Content style={styles.fighterContent}>
             <View style={styles.statsIconButton}>
               <IconButton
                 icon="account-details"
@@ -250,12 +251,12 @@ export default function IdleFightScreen() {
               <PocketPotionButton item={equipped.pocket2} slot="pocket2" onUse={handleUsePocketPotion} />
             </View>
             <View style={styles.avatarWrapper}>
-              <Animated.View style={[styles.userPlaceholder, userAnimatedStyle]}>
+              <Animated.View style={[styles.fighterPlaceholder, styles.userPlaceholder, userAnimatedStyle]}>
                 <Text variant="displayLarge">⚔️</Text>
               </Animated.View>
               <FloatingNumbersContainer numbers={userNumbers} onFloatingComplete={removeUserDamage} />
             </View>
-            <Text variant="headlineSmall" style={styles.userLabel}>
+            <Text variant="headlineSmall" style={[styles.fighterLabel, styles.userLabel]}>
               Hero Lv.{user.level}
             </Text>
             <ProgressBarWithText current={user.health} maxNumber={user.maxHealth} />
@@ -317,28 +318,32 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingHorizontal: 16
   },
-  monsterCard: {
+  fighterCard: {
     backgroundColor: '#16213e',
     borderRadius: 16,
     elevation: 4
   },
-  monsterContent: {
+  fighterContent: {
     alignItems: 'center',
     paddingVertical: 16
   },
-  monsterLabel: {
+  fighterLabel: {
     color: '#fff',
-    marginBottom: 16,
     fontWeight: 'bold'
+  },
+  monsterLabel: {
+    marginBottom: 16
+  },
+  fighterPlaceholder: {
+    backgroundColor: '#0f3460',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3
   },
   monsterPlaceholder: {
     width: 150,
     height: 150,
-    backgroundColor: '#0f3460',
     borderRadius: 75,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
     borderColor: '#e94560'
   },
   deadPlaceholder: {
@@ -372,15 +377,6 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     paddingHorizontal: 16
   },
-  userCard: {
-    backgroundColor: '#16213e',
-    borderRadius: 16,
-    elevation: 4
-  },
-  userContent: {
-    alignItems: 'center',
-    paddingVertical: 16
-  },
   avatarWrapper: {
     position: 'relative',
     marginBottom: 16,
@@ -390,16 +386,10 @@ const styles = StyleSheet.create({
   userPlaceholder: {
     width: 120,
     height: 120,
-    backgroundColor: '#0f3460',
     borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
     borderColor: '#4a90e2'
   },
   userLabel: {
-    color: '#fff',
-    fontWeight: 'bold',
     marginBottom: 8
   },
   statsIconButton: {
@@ -431,28 +421,25 @@ const styles = StyleSheet.create({
     gap: 6,
     zIndex: 1
   },
-  pocketSlotEmpty: {
+  pocketSlotBase: {
     width: 40,
     height: 40,
     borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  pocketSlotEmpty: {
     borderWidth: 1,
     borderStyle: 'dashed',
     borderColor: '#444',
-    backgroundColor: '#0f3460',
-    justifyContent: 'center',
-    alignItems: 'center'
+    backgroundColor: '#0f3460'
   },
   pocketSlotEmptyIcon: {
     fontSize: 16,
     opacity: 0.3
   },
   pocketSlotFilled: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center'
+    borderWidth: 2
   },
   pocketIcon: {
     fontSize: 18
