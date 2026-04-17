@@ -1,6 +1,15 @@
 import {createEmptyEquippedItems, getItemDefinition} from '@/constants/items'
 import {monsters} from '@/constants/monsters'
-import {DamageResult, EquipmentSlotType, EquippedItems, GameState, InventoryItem, Monster, StatType, User} from '@/types/game'
+import {
+  DamageResult,
+  EquipmentSlotType,
+  EquippedItems,
+  GameState,
+  InventoryItem,
+  Monster,
+  StatType,
+  User
+} from '@/types/game'
 import {
   BASE_ATTACK_SPEED,
   BASE_CRIT_CHANCE,
@@ -55,7 +64,7 @@ const createTestInventory = (): InventoryItem[] => [
 ]
 
 const createInitialUser = (): User => {
-  const baseUser = {
+  const baseUser: User = {
     strength: 0,
     agility: 0,
     vitality: 0,
@@ -68,22 +77,12 @@ const createInitialUser = (): User => {
     attackSpeed: BASE_ATTACK_SPEED,
     critChance: BASE_CRIT_CHANCE,
     critDamage: BASE_CRIT_DAMAGE,
+    health: BASE_MAX_HEALTH,
     maxHealth: BASE_MAX_HEALTH,
     armor: 0
   }
 
-  const effectiveStats = calculateEffectiveStats(baseUser as User)
-
-  return {
-    ...baseUser,
-    health: effectiveStats.maxHealth,
-    maxHealth: effectiveStats.maxHealth,
-    damage: effectiveStats.damage,
-    attackSpeed: effectiveStats.attackSpeed,
-    critChance: effectiveStats.critChance,
-    critDamage: effectiveStats.critDamage,
-    armor: effectiveStats.armor
-  }
+  return {...baseUser, ...calculateEffectiveStats(baseUser)}
 }
 
 const createMonster = (stage: number = 1): Monster => {
@@ -106,9 +105,8 @@ const createMonster = (stage: number = 1): Monster => {
   }
 }
 
-function applyEffectiveStats(user: User, equipped: EquippedItems) {
-  const equipBonuses = calculateEquipmentBonuses(equipped)
-  return calculateEffectiveStats(user, equipBonuses)
+function recomputeUser(user: User, equipped: EquippedItems): User {
+  return {...user, ...calculateEffectiveStats(user, calculateEquipmentBonuses(equipped))}
 }
 
 function processTick(state: GameState, deltaMs: number): GameState {
@@ -239,22 +237,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...(item ? {} : {statPoints: state.user.statPoints - 1})
       }
 
-      const effectiveStats = applyEffectiveStats(updatedUser, state.equipped)
-      const healthIncrease = effectiveStats.maxHealth - state.user.maxHealth
-
       return {
         ...state,
         inventory: item ? state.inventory.filter((i) => i.instanceId !== item.instanceId) : state.inventory,
-        user: {
-          ...updatedUser,
-          damage: effectiveStats.damage,
-          attackSpeed: effectiveStats.attackSpeed,
-          critChance: effectiveStats.critChance,
-          critDamage: effectiveStats.critDamage,
-          maxHealth: effectiveStats.maxHealth,
-          armor: effectiveStats.armor,
-          health: Math.min(updatedUser.health + healthIncrease, effectiveStats.maxHealth)
-        }
+        user: recomputeUser(updatedUser, state.equipped)
       }
     }
 
@@ -286,23 +272,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (prevEquippedItem && inventoryAfterRemoval.length >= MAX_INVENTORY_SIZE) return state
 
       const newEquipped = {...state.equipped, [targetSlot]: item}
-      const effectiveStats = applyEffectiveStats(state.user, newEquipped)
-      const healthDiff = effectiveStats.maxHealth - state.user.maxHealth
 
       return {
         ...state,
         equipped: newEquipped,
         inventory: prevEquippedItem ? [...inventoryAfterRemoval, prevEquippedItem] : inventoryAfterRemoval,
-        user: {
-          ...state.user,
-          damage: effectiveStats.damage,
-          attackSpeed: effectiveStats.attackSpeed,
-          critChance: effectiveStats.critChance,
-          critDamage: effectiveStats.critDamage,
-          maxHealth: effectiveStats.maxHealth,
-          armor: effectiveStats.armor,
-          health: Math.min(Math.max(1, state.user.health + healthDiff), effectiveStats.maxHealth)
-        }
+        user: recomputeUser(state.user, newEquipped)
       }
     }
 
@@ -311,23 +286,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!item || state.inventory.length >= MAX_INVENTORY_SIZE) return state
 
       const newEquipped = {...state.equipped, [action.slotType]: null}
-      const effectiveStats = applyEffectiveStats(state.user, newEquipped)
-      const healthDiff = effectiveStats.maxHealth - state.user.maxHealth
 
       return {
         ...state,
         equipped: newEquipped,
         inventory: [...state.inventory, item],
-        user: {
-          ...state.user,
-          damage: effectiveStats.damage,
-          attackSpeed: effectiveStats.attackSpeed,
-          critChance: effectiveStats.critChance,
-          critDamage: effectiveStats.critDamage,
-          maxHealth: effectiveStats.maxHealth,
-          armor: effectiveStats.armor,
-          health: Math.min(Math.max(1, state.user.health + healthDiff), effectiveStats.maxHealth)
-        }
+        user: recomputeUser(state.user, newEquipped)
       }
     }
 

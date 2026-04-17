@@ -45,6 +45,7 @@ export const calculateEquipmentBonuses = (equipped: EquippedItems): ItemStats =>
 
 export const calculateEffectiveStats = (user: User, equipBonuses?: ItemStats) => {
   const strengthDmgBonus = calculateDamageFromStats(user.strength)
+  const maxHealth = BASE_MAX_HEALTH + calculateMaxHealthFromStats(user.vitality) + (equipBonuses?.maxHealth ?? 0)
 
   return {
     damage: {
@@ -55,7 +56,8 @@ export const calculateEffectiveStats = (user: User, equipBonuses?: ItemStats) =>
       BASE_ATTACK_SPEED - calculateAttackSpeedFromStats(user.agility) + (equipBonuses?.attackSpeed ?? 0),
       100
     ),
-    maxHealth: BASE_MAX_HEALTH + calculateMaxHealthFromStats(user.vitality) + (equipBonuses?.maxHealth ?? 0),
+    maxHealth,
+    health: Math.min(Math.max(1, user.health + (maxHealth - user.maxHealth)), maxHealth),
     armor: equipBonuses?.armor ?? 0,
     critChance: Math.min(
       BASE_CRIT_CHANCE + calculateCritChanceFromStats(user.agility) + (equipBonuses?.critChance ?? 0),
