@@ -130,7 +130,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
 
     if (userAttackTimer >= user.attackSpeed) {
       userAttackTimer -= user.attackSpeed
-      userAttack = calculateDamageDealt(user.damage, undefined, user.critChance, user.critDamage)
+      userAttack = calculateDamageDealt(user.damage, user.critChance, user.critDamage)
       const monsterNewHealth = healthAfterAttack(monster.health, userAttack.damage)
       monster = {...monster, health: monsterNewHealth}
 
@@ -161,7 +161,7 @@ function processTick(state: GameState, deltaMs: number): GameState {
 
     if (monster.health > 0 && monsterAttackTimer >= monster.attackSpeed) {
       monsterAttackTimer -= monster.attackSpeed
-      monsterAttack = calculateDamageDealt(monster.damage, user.armor, monster.critChance, monster.critDamage)
+      monsterAttack = calculateDamageDealt(monster.damage, monster.critChance, monster.critDamage, user.armor)
       const userNewHealth = healthAfterAttack(user.health, monsterAttack.damage)
       user = {...user, health: userNewHealth}
 

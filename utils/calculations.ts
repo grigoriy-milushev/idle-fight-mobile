@@ -75,13 +75,13 @@ export const calculateGoldGain = (maxGold: number): number => {
 // DAMAGE CALCULATIONS
 export const calculateDamageDealt = (
   {from, to}: Demage,
-  armor?: number,
-  critChance: number = 0,
-  critDamage: number = 1
+  critChance: number,
+  critDamage: number,
+  armor?: number
 ): DamageResult => {
   const isCrit = Math.random() < critChance
-  let rawDamage = Math.floor(Math.random() * (to - from + 1)) + from
-  if (isCrit) rawDamage = Math.floor(rawDamage * critDamage)
+  const roll = Math.floor(Math.random() * (to - from + 1)) + from
+  const rawDamage = isCrit ? Math.floor(roll * critDamage) : roll
   return {damage: calculateDamageAfterArmor(rawDamage, armor), isCrit}
 }
 
