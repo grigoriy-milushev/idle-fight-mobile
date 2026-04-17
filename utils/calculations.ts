@@ -1,5 +1,5 @@
 import {getItemDefinition} from '@/constants/items'
-import {Demage, EquippedItems, ItemStats, User} from '@/types/game'
+import {DamageResult, Demage, EquippedItems, ItemStats, User} from '@/types/game'
 
 export const calculateExpToNextLevel = (level: number): number => Math.floor(100 * Math.pow(1.5, level - 1))
 export const healthAfterAttack = (health: number, damage: number) => Math.max(0, health - damage)
@@ -7,12 +7,16 @@ export const healthAfterAttack = (health: number, damage: number) => Math.max(0,
 export const calculateDamageFromStats = (strength: number): number => Math.floor(strength / 3)
 export const calculateAttackSpeedFromStats = (agility: number): number => Math.floor(agility / 3) * 50
 export const calculateMaxHealthFromStats = (vitality: number): number => vitality
+export const calculateCritChanceFromStats = (agility: number): number => Math.floor(agility / 5) * 0.01
 
 export const BASE_DAMAGE = {from: 1, to: 3}
 export const BASE_ATTACK_SPEED = 1000
 export const BASE_MAX_HEALTH = 100
+export const BASE_CRIT_CHANCE = 0.05
+export const BASE_CRIT_DAMAGE = 1.5
 const ARMOR_CONSTANT = 30
 const MAX_ARMOR_REDUCTION = 0.8
+const MAX_CRIT_CHANCE = 0.6
 
 export const calculateEquipmentBonuses = (equipped: EquippedItems): ItemStats => {
   const bonuses: ItemStats = {}
@@ -32,6 +36,8 @@ export const calculateEquipmentBonuses = (equipped: EquippedItems): ItemStats =>
     if (stats.armor) bonuses.armor = (bonuses.armor ?? 0) + stats.armor
     if (stats.maxHealth) bonuses.maxHealth = (bonuses.maxHealth ?? 0) + stats.maxHealth
     if (stats.attackSpeed) bonuses.attackSpeed = (bonuses.attackSpeed ?? 0) + stats.attackSpeed
+    if (stats.critChance) bonuses.critChance = (bonuses.critChance ?? 0) + stats.critChance
+    if (stats.critDamage) bonuses.critDamage = (bonuses.critDamage ?? 0) + stats.critDamage
   }
 
   return bonuses
@@ -50,7 +56,12 @@ export const calculateEffectiveStats = (user: User, equipBonuses?: ItemStats) =>
       100
     ),
     maxHealth: BASE_MAX_HEALTH + calculateMaxHealthFromStats(user.vitality) + (equipBonuses?.maxHealth ?? 0),
-    armor: equipBonuses?.armor ?? 0
+    armor: equipBonuses?.armor ?? 0,
+    critChance: Math.min(
+      BASE_CRIT_CHANCE + calculateCritChanceFromStats(user.agility) + (equipBonuses?.critChance ?? 0),
+      MAX_CRIT_CHANCE
+    ),
+    critDamage: BASE_CRIT_DAMAGE + (equipBonuses?.critDamage ?? 0)
   }
 }
 
@@ -60,9 +71,16 @@ export const calculateGoldGain = (maxGold: number): number => {
 }
 
 // DAMAGE CALCULATIONS
-export const calculateDamageDealt = ({from, to}: Demage, armor?: number) => {
-  const rawDamage = Math.floor(Math.random() * (to - from + 1)) + from
-  return calculateDamageAfterArmor(rawDamage, armor)
+export const calculateDamageDealt = (
+  {from, to}: Demage,
+  armor?: number,
+  critChance: number = 0,
+  critDamage: number = 1
+): DamageResult => {
+  const isCrit = Math.random() < critChance
+  let rawDamage = Math.floor(Math.random() * (to - from + 1)) + from
+  if (isCrit) rawDamage = Math.floor(rawDamage * critDamage)
+  return {damage: calculateDamageAfterArmor(rawDamage, armor), isCrit}
 }
 
 const getArmorReduction = (armor: number): number => Math.min(armor / (armor + ARMOR_CONSTANT), MAX_ARMOR_REDUCTION)

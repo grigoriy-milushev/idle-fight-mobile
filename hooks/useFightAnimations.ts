@@ -1,5 +1,6 @@
 import {FloatingNumberType} from '@/components/FloatingNumber'
 import {FloatingNumbers} from '@/components/FloatingNumbersContainer'
+import {DamageResult} from '@/types/game'
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {useAnimatedStyle, useSharedValue, withSequence, withTiming} from 'react-native-reanimated'
 
@@ -9,7 +10,7 @@ const MAX_FLOATING_NUMBERS = 4
  * Hook for managing attack animations and floating damage/gold numbers.
  * Handles shake animations and floating number display.
  */
-export function useFightAnimations(userAttacked?: number, monsterAttacked?: number, goldGained?: number) {
+export function useFightAnimations(userAttack?: DamageResult, monsterAttack?: DamageResult, goldGained?: number) {
   const {sharedValue: userShakeX, animatedStyle: userAnimatedStyle} = useShakeAnimationStyle()
   const {sharedValue: monsterShakeX, animatedStyle: monsterAnimatedStyle} = useShakeAnimationStyle()
 
@@ -53,18 +54,18 @@ export function useFightAnimations(userAttacked?: number, monsterAttacked?: numb
   }, [])
 
   useEffect(() => {
-    if (userAttacked) {
+    if (userAttack) {
       triggerShake('opponent')
-      showFloatingNumber(userAttacked, 'opponent', 'damage')
+      showFloatingNumber(userAttack.damage, 'opponent', userAttack.isCrit ? 'crit' : 'damage')
     }
 
-    if (monsterAttacked) {
+    if (monsterAttack) {
       triggerShake('user')
-      showFloatingNumber(monsterAttacked, 'user', 'damage')
+      showFloatingNumber(monsterAttack.damage, 'user', monsterAttack.isCrit ? 'crit' : 'damage')
     }
 
     if (goldGained) showFloatingNumber(goldGained, 'user', 'gold')
-  }, [userAttacked, monsterAttacked, goldGained, triggerShake, showFloatingNumber])
+  }, [userAttack, monsterAttack, goldGained, triggerShake, showFloatingNumber])
 
   return {
     userAnimatedStyle,

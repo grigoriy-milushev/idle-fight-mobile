@@ -1,8 +1,10 @@
 import {createEmptyEquippedItems, getItemDefinition} from '@/constants/items'
 import {monsters} from '@/constants/monsters'
-import {EquipmentSlotType, EquippedItems, GameState, InventoryItem, Monster, StatType, User} from '@/types/game'
+import {DamageResult, EquipmentSlotType, EquippedItems, GameState, InventoryItem, Monster, StatType, User} from '@/types/game'
 import {
   BASE_ATTACK_SPEED,
+  BASE_CRIT_CHANCE,
+  BASE_CRIT_DAMAGE,
   BASE_DAMAGE,
   BASE_MAX_HEALTH,
   calculateDamageDealt,
@@ -64,6 +66,8 @@ const createInitialUser = (): User => {
     gold: 0,
     damage: {from: BASE_DAMAGE.from, to: BASE_DAMAGE.to},
     attackSpeed: BASE_ATTACK_SPEED,
+    critChance: BASE_CRIT_CHANCE,
+    critDamage: BASE_CRIT_DAMAGE,
     maxHealth: BASE_MAX_HEALTH,
     armor: 0
   }
@@ -76,6 +80,8 @@ const createInitialUser = (): User => {
     maxHealth: effectiveStats.maxHealth,
     damage: effectiveStats.damage,
     attackSpeed: effectiveStats.attackSpeed,
+    critChance: effectiveStats.critChance,
+    critDamage: effectiveStats.critDamage,
     armor: effectiveStats.armor
   }
 }
@@ -107,8 +113,8 @@ function applyEffectiveStats(user: User, equipped: EquippedItems) {
 
 function processTick(state: GameState, deltaMs: number): GameState {
   let {user, monster, currentStage, userAttackTimer, monsterAttackTimer, respawnTimer} = state
-  let userAttacked = undefined
-  let monsterAttacked = undefined
+  let userAttack: DamageResult | undefined
+  let monsterAttack: DamageResult | undefined
 
   if (respawnTimer > 0) {
     respawnTimer -= deltaMs
@@ -126,10 +132,9 @@ function processTick(state: GameState, deltaMs: number): GameState {
 
     if (userAttackTimer >= user.attackSpeed) {
       userAttackTimer -= user.attackSpeed
-      const damageDealt = calculateDamageDealt(user.damage)
-      const monsterNewHealth = healthAfterAttack(monster.health, damageDealt)
+      userAttack = calculateDamageDealt(user.damage, undefined, user.critChance, user.critDamage)
+      const monsterNewHealth = healthAfterAttack(monster.health, userAttack.damage)
       monster = {...monster, health: monsterNewHealth}
-      userAttacked = damageDealt
 
       if (monsterNewHealth <= 0) {
         const expGain = monster.expGain
@@ -158,10 +163,9 @@ function processTick(state: GameState, deltaMs: number): GameState {
 
     if (monster.health > 0 && monsterAttackTimer >= monster.attackSpeed) {
       monsterAttackTimer -= monster.attackSpeed
-      const damageDealt = calculateDamageDealt(monster.damage, user.armor)
-      const userNewHealth = healthAfterAttack(user.health, damageDealt)
+      monsterAttack = calculateDamageDealt(monster.damage, user.armor, monster.critChance, monster.critDamage)
+      const userNewHealth = healthAfterAttack(user.health, monsterAttack.damage)
       user = {...user, health: userNewHealth}
-      monsterAttacked = damageDealt
 
       if (userNewHealth <= 0) {
         return {
@@ -172,8 +176,8 @@ function processTick(state: GameState, deltaMs: number): GameState {
           userAttackTimer: 0,
           monsterAttackTimer: 0,
           respawnTimer: 0,
-          userAttacked,
-          monsterAttacked,
+          userAttack,
+          monsterAttack,
           goldGained: undefined
         }
       }
@@ -188,8 +192,8 @@ function processTick(state: GameState, deltaMs: number): GameState {
     userAttackTimer,
     monsterAttackTimer,
     respawnTimer,
-    userAttacked,
-    monsterAttacked,
+    userAttack,
+    monsterAttack,
     goldGained: user.gold - state.user.gold
   }
 }
@@ -214,8 +218,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         userAttackTimer: 0,
         monsterAttackTimer: 0,
         respawnTimer: 0,
-        userAttacked: undefined,
-        monsterAttacked: undefined,
+        userAttack: undefined,
+        monsterAttack: undefined,
         goldGained: undefined
       }
 
@@ -245,6 +249,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...updatedUser,
           damage: effectiveStats.damage,
           attackSpeed: effectiveStats.attackSpeed,
+          critChance: effectiveStats.critChance,
+          critDamage: effectiveStats.critDamage,
           maxHealth: effectiveStats.maxHealth,
           armor: effectiveStats.armor,
           health: Math.min(updatedUser.health + healthIncrease, effectiveStats.maxHealth)
@@ -291,6 +297,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...state.user,
           damage: effectiveStats.damage,
           attackSpeed: effectiveStats.attackSpeed,
+          critChance: effectiveStats.critChance,
+          critDamage: effectiveStats.critDamage,
           maxHealth: effectiveStats.maxHealth,
           armor: effectiveStats.armor,
           health: Math.min(Math.max(1, state.user.health + healthDiff), effectiveStats.maxHealth)
@@ -314,6 +322,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           ...state.user,
           damage: effectiveStats.damage,
           attackSpeed: effectiveStats.attackSpeed,
+          critChance: effectiveStats.critChance,
+          critDamage: effectiveStats.critDamage,
           maxHealth: effectiveStats.maxHealth,
           armor: effectiveStats.armor,
           health: Math.min(Math.max(1, state.user.health + healthDiff), effectiveStats.maxHealth)
@@ -336,8 +346,8 @@ const createInitialState = (): GameState => ({
   respawnTimer: 0,
   equipped: createEmptyEquippedItems(),
   inventory: createTestInventory(),
-  userAttacked: undefined,
-  monsterAttacked: undefined,
+  userAttack: undefined,
+  monsterAttack: undefined,
   goldGained: undefined
 })
 

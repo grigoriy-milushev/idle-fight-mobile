@@ -6,6 +6,8 @@ export interface Monster {
   maxHealth: number
   damage: Demage
   attackSpeed: number
+  critChance: number
+  critDamage: number
   expGain: number
   goldGain: number
 }
@@ -15,6 +17,8 @@ export interface User {
   maxHealth: number
   damage: Demage
   attackSpeed: number
+  critChance: number
+  critDamage: number
   armor: number
   experience: number
   level: number
@@ -33,6 +37,11 @@ export type Demage = {
   to: number
 }
 
+export type DamageResult = {
+  damage: number
+  isCrit: boolean
+}
+
 export type GameState = {
   user: User
   monster: Monster
@@ -43,8 +52,8 @@ export type GameState = {
   respawnTimer: number
   equipped: EquippedItems
   inventory: InventoryItem[]
-  userAttacked?: number
-  monsterAttacked?: number
+  userAttack?: DamageResult
+  monsterAttack?: DamageResult
   goldGained?: number
 }
 
@@ -71,6 +80,8 @@ export interface ItemStats {
   armor?: number
   maxHealth?: number
   attackSpeed?: number // bonus/reduction in ms
+  critChance?: number // flat bonus (e.g. 0.05 = +5%)
+  critDamage?: number // flat bonus (e.g. 0.25 = +25% crit multiplier)
 }
 
 export type ConsumableEffect =

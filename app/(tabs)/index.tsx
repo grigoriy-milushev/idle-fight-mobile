@@ -20,6 +20,8 @@ const createHeroStatsSections = (user: User): StatsSection[] => [
       {label: 'Level', value: user.level},
       {label: 'Attack Damage', value: `${user.damage.from} - ${user.damage.to}`},
       {label: 'Attack Speed', value: `${user.attackSpeed / 1000}s`},
+      {label: 'Crit Chance', value: `${Math.round(user.critChance * 100)}%`},
+      {label: 'Crit Damage', value: `${Math.round(user.critDamage * 100)}%`},
       {label: 'Max Health', value: user.maxHealth},
       {label: 'Armor', value: user.armor}
     ]
@@ -38,7 +40,7 @@ const createHeroStatsSections = (user: User): StatsSection[] => [
         label: 'Agility',
         value: user.agility,
         statKey: 'agility',
-        hint: 'Every 3 points: +0.05s attack speed'
+        hint: 'Every 3 pts: +0.05s speed, every 5 pts: +1% crit'
       },
       {
         label: 'Vitality',
@@ -91,8 +93,7 @@ function PocketPotionButton({
 export default function IdleFightScreen() {
   const state = useGameState()
   const dispatch = useGameDispatch()
-  const {user, monster, currentStage, isFighting, respawnTimer, userAttacked, monsterAttacked, goldGained, equipped} =
-    state
+  const {user, monster, currentStage, isFighting, respawnTimer, userAttack, monsterAttack, goldGained, equipped} = state
   const [statsModalVisible, setStatsModalVisible] = useState(false)
 
   const {
@@ -104,7 +105,7 @@ export default function IdleFightScreen() {
     removeMonsterDamage,
     removeUserDamage,
     resetAnimations
-  } = useFightAnimations(userAttacked, monsterAttacked, goldGained)
+  } = useFightAnimations(userAttack, monsterAttack, goldGained)
 
   const isFocused = useIsFocused()
 

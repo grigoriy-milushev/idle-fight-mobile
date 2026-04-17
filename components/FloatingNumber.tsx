@@ -1,5 +1,5 @@
 import {useEffect} from 'react'
-import {StyleSheet} from 'react-native'
+import {StyleSheet, TextStyle} from 'react-native'
 import {Text} from 'react-native-paper'
 import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated'
 import {scheduleOnRN} from 'react-native-worklets'
@@ -7,7 +7,7 @@ import {scheduleOnRN} from 'react-native-worklets'
 const FLOAT_DURATION = 1000
 const FLOAT_DISTANCE = -60 // pixels upward
 
-export type FloatingNumberType = 'damage' | 'gold' | 'heal'
+export type FloatingNumberType = 'damage' | 'crit' | 'gold' | 'heal'
 
 /**
  * Component for rendering a single floating number.
@@ -40,11 +40,20 @@ export function FloatingNumber({
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
-      <Text style={type === 'gold' ? styles.goldText : type === 'heal' ? styles.healText : styles.damageText}>
-        {type === 'gold' ? `+${value} Gold` : type === 'heal' ? `+${value} HP` : `-${value}`}
-      </Text>
+      <Text style={TEXT_STYLES[type]}>{formatValue(value, type)}</Text>
     </Animated.View>
   )
+}
+
+function formatValue(value: number, type: FloatingNumberType) {
+  switch (type) {
+    case 'gold':
+      return `+${value} Gold`
+    case 'heal':
+      return `+${value} HP`
+    case 'damage' || 'crit':
+      return `-${value}`
+  }
 }
 
 const styles = StyleSheet.create({
@@ -76,5 +85,20 @@ const styles = StyleSheet.create({
     textShadowColor: '#000',
     textShadowOffset: {width: 1, height: 1},
     textShadowRadius: 2
+  },
+  critText: {
+    fontSize: 31,
+    fontWeight: 'bold',
+    color: '#ff8c00',
+    textShadowColor: '#000',
+    textShadowOffset: {width: 2, height: 2},
+    textShadowRadius: 4
   }
 })
+
+const TEXT_STYLES: Record<FloatingNumberType, TextStyle> = {
+  damage: styles.damageText,
+  crit: styles.critText,
+  gold: styles.goldText,
+  heal: styles.healText
+}
