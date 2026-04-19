@@ -181,7 +181,12 @@ export default function IdleFightScreen() {
             </Text>
             <View style={styles.avatarWrapper}>
               <Animated.View
-                style={[styles.fighterPlaceholder, styles.monsterPlaceholder, monsterAnimatedStyle, isMonsterDead && styles.deadPlaceholder]}
+                style={[
+                  styles.fighterPlaceholder,
+                  styles.monsterPlaceholder,
+                  monsterAnimatedStyle,
+                  isMonsterDead && styles.deadPlaceholder
+                ]}
               >
                 <Text variant="displayLarge">{isMonsterDead ? '💀' : monster.img}</Text>
               </Animated.View>
