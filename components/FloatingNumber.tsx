@@ -51,7 +51,8 @@ function formatValue(value: number, type: FloatingNumberType) {
       return `+${value} Gold`
     case 'heal':
       return `+${value} HP`
-    case 'damage' || 'crit':
+    case 'crit':
+    case 'damage':
       return `-${value}`
   }
 }
@@ -63,9 +64,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   damageText: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#ff4444',
+    color: '#ff8c00',
     textShadowColor: '#000',
     textShadowOffset: {width: 1, height: 1},
     textShadowRadius: 2
@@ -87,9 +88,9 @@ const styles = StyleSheet.create({
     textShadowRadius: 2
   },
   critText: {
-    fontSize: 31,
+    fontSize: 35,
     fontWeight: 'bold',
-    color: '#ff8c00',
+    color: '#ff4444',
     textShadowColor: '#000',
     textShadowOffset: {width: 2, height: 2},
     textShadowRadius: 4
