@@ -81,7 +81,7 @@ export const calculateDamageDealt = (
 ): DamageResult => {
   const isCrit = Math.random() < critChance
   const roll = Math.floor(Math.random() * (to - from + 1)) + from
-  const rawDamage = isCrit ? Math.floor(roll * critDamage) : roll
+  const rawDamage = isCrit ? Math.floor(to * critDamage) : roll
   return {damage: calculateDamageAfterArmor(rawDamage, armor), isCrit}
 }
 
