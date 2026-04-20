@@ -1,7 +1,7 @@
 import {FloatingNumberType} from '@/components/FloatingNumber'
 import {FloatingNumbers} from '@/components/FloatingNumbersContainer'
 import {DamageResult} from '@/types/game'
-import {useCallback, useEffect, useRef, useState} from 'react'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {useAnimatedStyle, useSharedValue, withSequence, withTiming} from 'react-native-reanimated'
 
 const MAX_FLOATING_NUMBERS = 4
@@ -11,24 +11,49 @@ const MAX_FLOATING_NUMBERS = 4
  * Handles shake animations and floating number display.
  */
 export function useFightAnimations(userAttack?: DamageResult, monsterAttack?: DamageResult, goldGained?: number) {
-  const {sharedValue: userShakeX, animatedStyle: userAnimatedStyle} = useShakeAnimationStyle()
-  const {sharedValue: monsterShakeX, animatedStyle: monsterAnimatedStyle} = useShakeAnimationStyle()
+  const userShake = useShakeAnimationStyle()
+  const monsterShake = useShakeAnimationStyle()
 
   const [monsterNumbers, setMonsterNumbers] = useState<FloatingNumbers>([])
   const [userNumbers, setUserNumbers] = useState<FloatingNumbers>([])
   const nextIdRef = useRef(0)
 
   const triggerShake = useCallback(
-    (target: 'user' | 'opponent') => {
-      const shakeValue = target === 'user' ? userShakeX : monsterShakeX
-      shakeValue.value = withSequence(
+    (target: 'user' | 'opponent', isCrit: boolean = false) => {
+      const shake = target === 'user' ? userShake : monsterShake
+
+      if (isCrit) {
+        // Violent jolt: larger amplitude, vertical bounce and rotation wobble
+        shake.x.value = withSequence(
+          withTiming(-18, {duration: 40}),
+          withTiming(18, {duration: 40}),
+          withTiming(-12, {duration: 40}),
+          withTiming(8, {duration: 40}),
+          withTiming(0, {duration: 40})
+        )
+        shake.y.value = withSequence(
+          withTiming(-10, {duration: 40}),
+          withTiming(6, {duration: 40}),
+          withTiming(-4, {duration: 40}),
+          withTiming(0, {duration: 80})
+        )
+        shake.rotate.value = withSequence(
+          withTiming(-8, {duration: 40}),
+          withTiming(8, {duration: 40}),
+          withTiming(-4, {duration: 40}),
+          withTiming(0, {duration: 80})
+        )
+        return
+      }
+
+      shake.x.value = withSequence(
         withTiming(-10, {duration: 50}),
         withTiming(10, {duration: 50}),
         withTiming(-5, {duration: 50}),
         withTiming(0, {duration: 50})
       )
     },
-    [userShakeX, monsterShakeX]
+    [userShake, monsterShake]
   )
 
   const showFloatingNumber = useCallback(
@@ -55,12 +80,12 @@ export function useFightAnimations(userAttack?: DamageResult, monsterAttack?: Da
 
   useEffect(() => {
     if (userAttack) {
-      triggerShake('opponent')
+      triggerShake('opponent', userAttack.isCrit)
       showFloatingNumber(userAttack.damage, 'opponent', userAttack.isCrit ? 'crit' : 'damage')
     }
 
     if (monsterAttack) {
-      triggerShake('user')
+      triggerShake('user', monsterAttack.isCrit)
       showFloatingNumber(monsterAttack.damage, 'user', monsterAttack.isCrit ? 'crit' : 'damage')
     }
 
@@ -68,25 +93,42 @@ export function useFightAnimations(userAttack?: DamageResult, monsterAttack?: Da
   }, [userAttack, monsterAttack, goldGained, triggerShake, showFloatingNumber])
 
   return {
-    userAnimatedStyle,
-    monsterAnimatedStyle,
+    userAnimatedStyle: userShake.animatedStyle,
+    monsterAnimatedStyle: monsterShake.animatedStyle,
     monsterNumbers,
     userNumbers,
     showFloatingNumber,
     removeMonsterDamage: useCallback((id: string) => removeFloatingNumber(id, 'opponent'), [removeFloatingNumber]),
     removeUserDamage: useCallback((id: string) => removeFloatingNumber(id, 'user'), [removeFloatingNumber]),
     resetAnimations: useCallback(() => {
-      userShakeX.value = 0
-      monsterShakeX.value = 0
+      userShake.reset()
+      monsterShake.reset()
       setMonsterNumbers([])
       setUserNumbers([])
-    }, [userShakeX, monsterShakeX])
+    }, [userShake, monsterShake])
   }
 }
 
-function useShakeAnimationStyle(initialValue: number = 0) {
-  const sharedValue = useSharedValue(initialValue)
-  const animatedStyle = useAnimatedStyle(() => ({transform: [{translateX: sharedValue.value}]}))
+function useShakeAnimationStyle() {
+  const x = useSharedValue(0)
+  const y = useSharedValue(0)
+  const rotate = useSharedValue(0)
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{translateX: x.value}, {translateY: y.value}, {rotate: `${rotate.value}deg`}]
+  }))
 
-  return {sharedValue, animatedStyle}
+  return useMemo(
+    () => ({
+      x,
+      y,
+      rotate,
+      animatedStyle,
+      reset: () => {
+        x.value = 0
+        y.value = 0
+        rotate.value = 0
+      }
+    }),
+    [x, y, rotate, animatedStyle]
+  )
 }
