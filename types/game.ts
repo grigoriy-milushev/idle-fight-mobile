@@ -97,6 +97,7 @@ export interface ItemDefinition {
   stats: ItemStats
   description?: string
   consumableEffect?: ConsumableEffect
+  price?: number
 }
 
 export interface InventoryItem {

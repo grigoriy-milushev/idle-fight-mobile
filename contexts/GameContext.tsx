@@ -38,6 +38,7 @@ export type GameAction =
   | {type: 'USE_POTION'; slot: 'pocket1' | 'pocket2'}
   | {type: 'EQUIP_ITEM'; item: InventoryItem; targetSlot: EquipmentSlotType}
   | {type: 'UNEQUIP_ITEM'; slotType: EquipmentSlotType}
+  | {type: 'BUY_ITEM'; definitionId: string}
 
 const createTestInventory = (): InventoryItem[] => [
   {instanceId: 'test-1', definitionId: 'rusty_sword'},
@@ -292,6 +293,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         equipped: newEquipped,
         inventory: [...state.inventory, item],
         user: recomputeUser(state.user, newEquipped)
+      }
+    }
+
+    case 'BUY_ITEM': {
+      const definition = getItemDefinition(action.definitionId)
+      if (!definition?.price) return state
+      if (state.user.gold < definition.price) return state
+      if (state.inventory.length >= MAX_INVENTORY_SIZE) return state
+
+      const newItem: InventoryItem = {
+        instanceId: `purchased-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        definitionId: definition.id
+      }
+
+      return {
+        ...state,
+        user: {...state.user, gold: state.user.gold - definition.price},
+        inventory: [...state.inventory, newItem]
       }
     }
 

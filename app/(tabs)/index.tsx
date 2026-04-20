@@ -6,6 +6,7 @@ import {useGameDispatch, useGameState} from '@/contexts/GameContext'
 import {useFightAnimations} from '@/hooks/useFightAnimations'
 import {ConsumableEffect, InventoryItem, StatType, User} from '@/types/game'
 import {useIsFocused} from '@react-navigation/native'
+import {router} from 'expo-router'
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {Pressable, StyleSheet, View} from 'react-native'
 import {Button, Card, Chip, IconButton, Surface, Text} from 'react-native-paper'
@@ -169,9 +170,14 @@ export default function IdleFightScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Surface style={styles.header} elevation={2}>
         <View style={styles.headerSpacer} />
-        <Chip style={styles.goldChip} textStyle={styles.goldText} mode="flat">
-          💰 {user.gold}
-        </Chip>
+        <Pressable
+          onPress={() => router.push('/inventory?view=shop')}
+          style={({pressed}) => [styles.goldChipPressable, pressed && styles.goldChipPressed]}
+        >
+          <Chip style={styles.goldChip} textStyle={styles.goldText} mode="flat">
+            💰 {user.gold}
+          </Chip>
+        </Pressable>
       </Surface>
       <View style={styles.monsterSection}>
         <Card style={styles.fighterCard}>
@@ -309,6 +315,12 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     flex: 1
+  },
+  goldChipPressable: {
+    borderRadius: 16
+  },
+  goldChipPressed: {
+    opacity: 0.6
   },
   goldChip: {
     backgroundColor: '#0f3460',

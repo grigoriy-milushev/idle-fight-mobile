@@ -1,9 +1,10 @@
-import {EQUIPMENT_SLOTS, getItemDefinition, RARITY_COLORS} from '@/constants/items'
+import {EQUIPMENT_SLOTS, getItemDefinition, RARITY_COLORS, SHOP_ITEMS} from '@/constants/items'
 import {useGameDispatch, useGameState} from '@/contexts/GameContext'
 import {EquipmentSlotType, InventoryItem, ItemDefinition} from '@/types/game'
-import React, {useCallback, useMemo, useState} from 'react'
+import {useLocalSearchParams} from 'expo-router'
+import React, {useCallback, useEffect, useMemo, useState} from 'react'
 import {Dimensions, Pressable, ScrollView, StyleSheet, View} from 'react-native'
-import {Button, Dialog, Portal, Surface, Text} from 'react-native-paper'
+import {Button, Chip, Dialog, Portal, SegmentedButtons, Surface, Text} from 'react-native-paper'
 import {SafeAreaView} from 'react-native-safe-area-context'
 
 const GRID_COLS = 5
@@ -12,9 +13,23 @@ const GRID_ROWS = 6
 const CELL_SIZE = 52
 const CELL_GAP = 4
 
+const SHOP_CELL_SIZE = 64
+
 const {width: SCREEN_WIDTH} = Dimensions.get('window')
 
-function ItemCell({definition, onTap}: {definition: ItemDefinition; onTap: () => void}) {
+type DialogTarget =
+  | {mode: 'bag'; item: InventoryItem; isEquipped: boolean}
+  | {mode: 'shop'; definitionId: string}
+
+function ItemCell({
+  definition,
+  onTap,
+  size = CELL_SIZE
+}: {
+  definition: ItemDefinition
+  onTap: () => void
+  size?: number
+}) {
   const rarityColor = RARITY_COLORS[definition.rarity]
 
   return (
@@ -23,15 +38,15 @@ function ItemCell({definition, onTap}: {definition: ItemDefinition; onTap: () =>
       style={({pressed}) => [
         styles.itemCell,
         {
-          width: CELL_SIZE,
-          height: CELL_SIZE,
+          width: size,
+          height: size,
           borderColor: rarityColor,
-          backgroundColor: `${rarityColor}33`, // TODO:
+          backgroundColor: `${rarityColor}33`,
           opacity: pressed ? 0.7 : 1
         }
       ]}
     >
-      <Text style={styles.itemIcon}>{definition.icon}</Text>
+      <Text style={[styles.itemIcon, size >= SHOP_CELL_SIZE && styles.itemIconLarge]}>{definition.icon}</Text>
     </Pressable>
   )
 }
@@ -84,7 +99,6 @@ function BackpackGrid({
     return cells
   }, [])
 
-  // Render items - position calculated from array index
   const itemElements = useMemo(() => {
     return items.map((item, index) => {
       const definition = getItemDefinition(item.definitionId)
@@ -117,10 +131,120 @@ function BackpackGrid({
   )
 }
 
-export default function InventoryScreen() {
+function ShopItemCard({
+  definition,
+  canAfford,
+  onTap
+}: {
+  definition: ItemDefinition
+  canAfford: boolean
+  onTap: () => void
+}) {
+  return (
+    <View style={styles.shopItem}>
+      <ItemCell definition={definition} onTap={onTap} size={SHOP_CELL_SIZE} />
+      <View style={[styles.priceTag, !canAfford && styles.priceTagUnaffordable]}>
+        <Text style={[styles.priceText, !canAfford && styles.priceTextUnaffordable]}>
+          💰 {definition.price}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
+function BagView({
+  cellSize,
+  onTap
+}: {
+  cellSize: number
+  onTap: (item: InventoryItem, isEquipped: boolean) => void
+}) {
   const {equipped, inventory} = useGameState()
+
+  return (
+    <>
+      <View style={styles.section}>
+        <Text variant="titleMedium" style={styles.sectionTitle}>
+          Equipment
+        </Text>
+        <View style={styles.equipmentGrid}>
+          <View style={styles.equipmentRow}>
+            <View style={[styles.equipmentCell, {width: cellSize}]} />
+            <EquipmentSlot item={equipped.helmet} slotInfo={EQUIPMENT_SLOTS.helmet} onTap={onTap} />
+            <View style={[styles.equipmentCell, {width: cellSize}]} />
+          </View>
+
+          <View style={styles.equipmentRow}>
+            <EquipmentSlot item={equipped.weapon} slotInfo={EQUIPMENT_SLOTS.weapon} onTap={onTap} />
+            <EquipmentSlot item={equipped.armor} slotInfo={EQUIPMENT_SLOTS.armor} onTap={onTap} />
+            <EquipmentSlot item={equipped.offhand} slotInfo={EQUIPMENT_SLOTS.offhand} onTap={onTap} />
+          </View>
+
+          <View style={styles.equipmentRow}>
+            <EquipmentSlot item={equipped.gloves} slotInfo={EQUIPMENT_SLOTS.gloves} onTap={onTap} />
+            <EquipmentSlot item={equipped.ring} slotInfo={EQUIPMENT_SLOTS.ring} onTap={onTap} />
+            <EquipmentSlot item={equipped.amulet} slotInfo={EQUIPMENT_SLOTS.amulet} onTap={onTap} />
+          </View>
+
+          <View style={styles.equipmentRow}>
+            <EquipmentSlot item={equipped.pocket1} slotInfo={EQUIPMENT_SLOTS.pocket1} onTap={onTap} />
+            <EquipmentSlot item={equipped.boots} slotInfo={EQUIPMENT_SLOTS.boots} onTap={onTap} />
+            <EquipmentSlot item={equipped.pocket2} slotInfo={EQUIPMENT_SLOTS.pocket2} onTap={onTap} />
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text variant="titleMedium" style={styles.sectionTitle}>
+          Backpack
+        </Text>
+        <View style={styles.backpackContainer}>
+          <BackpackGrid items={inventory} onTap={onTap} />
+        </View>
+      </View>
+    </>
+  )
+}
+
+function ShopView({gold, onTap}: {gold: number; onTap: (definitionId: string) => void}) {
+  const shopEntries = useMemo(
+    () =>
+      SHOP_ITEMS.map((id) => getItemDefinition(id)).filter(
+        (def): def is ItemDefinition => !!def && typeof def.price === 'number'
+      ),
+    []
+  )
+
+  return (
+    <View style={styles.section}>
+      <Text variant="titleMedium" style={styles.sectionTitle}>
+        Shop
+      </Text>
+      <View style={styles.shopGrid}>
+        {shopEntries.map((def) => (
+          <ShopItemCard
+            key={def.id}
+            definition={def}
+            canAfford={gold >= (def.price ?? 0)}
+            onTap={() => onTap(def.id)}
+          />
+        ))}
+      </View>
+    </View>
+  )
+}
+
+export default function InventoryScreen() {
+  const {equipped, inventory, user} = useGameState()
   const dispatch = useGameDispatch()
-  const [dialogItem, setDialogItem] = useState<{item: InventoryItem; isEquipped: boolean} | null>(null)
+  const params = useLocalSearchParams<{view?: string}>()
+  const [segment, setSegment] = useState<'bag' | 'shop'>('bag')
+  const [dialogTarget, setDialogTarget] = useState<DialogTarget | null>(null)
+
+  useEffect(() => {
+    if (params.view === 'shop') setSegment('shop')
+    else if (params.view === 'bag') setSegment('bag')
+  }, [params.view])
 
   // TODO: too complex, simplify this
   const cellSize = useMemo(() => {
@@ -128,20 +252,30 @@ export default function InventoryScreen() {
     return Math.min(CELL_SIZE, Math.floor((availableWidth - (GRID_COLS - 1) * CELL_GAP) / GRID_COLS))
   }, [])
 
-  const handleTap = useCallback((item: InventoryItem, isEquipped: boolean) => {
-    setDialogItem({item, isEquipped})
+  const handleBagTap = useCallback((item: InventoryItem, isEquipped: boolean) => {
+    setDialogTarget({mode: 'bag', item, isEquipped})
+  }, [])
+
+  const handleShopTap = useCallback((definitionId: string) => {
+    setDialogTarget({mode: 'shop', definitionId})
   }, [])
 
   const handleConfirmAction = useCallback(() => {
-    if (!dialogItem) return
+    if (!dialogTarget) return
 
-    const {item, isEquipped} = dialogItem
+    if (dialogTarget.mode === 'shop') {
+      dispatch({type: 'BUY_ITEM', definitionId: dialogTarget.definitionId})
+      setDialogTarget(null)
+      return
+    }
+
+    const {item, isEquipped} = dialogTarget
     const definition = getItemDefinition(item.definitionId)
     if (!definition) return
 
     if (definition.consumableEffect?.type === 'stat_boost') {
       dispatch({type: 'ALLOCATE_STAT', stat: definition.consumableEffect.stat, item})
-      setDialogItem(null)
+      setDialogTarget(null)
       return
     }
 
@@ -158,17 +292,18 @@ export default function InventoryScreen() {
       dispatch({type: 'EQUIP_ITEM', item, targetSlot})
     }
 
-    setDialogItem(null)
-  }, [dialogItem, equipped, dispatch])
+    setDialogTarget(null)
+  }, [dialogTarget, equipped, dispatch])
 
-  // Get dialog info
   const dialogInfo = useMemo(() => {
-    if (!dialogItem) return null
-    const definition = getItemDefinition(dialogItem.item.definitionId)
-    if (!definition) return null
-    const {name, icon, rarity, description, stats, consumableEffect} = definition
+    if (!dialogTarget) return null
 
-    const action = consumableEffect?.type === 'stat_boost' ? 'Use' : dialogItem.isEquipped ? 'Unequip' : 'Equip'
+    const definitionId =
+      dialogTarget.mode === 'bag' ? dialogTarget.item.definitionId : dialogTarget.definitionId
+    const definition = getItemDefinition(definitionId)
+    if (!definition) return null
+
+    const {name, icon, rarity, description, stats, consumableEffect, price} = definition
     const rarityColor = RARITY_COLORS[rarity]
 
     const statsDescription: string[] = []
@@ -187,8 +322,27 @@ export default function InventoryScreen() {
       statsDescription.push(`Attack Speed: ${stats.attackSpeed < 0 ? '' : '+'}${stats.attackSpeed}ms`)
     }
 
-    return {action, name, icon, rarityColor, description, statsDescription}
-  }, [dialogItem])
+    let action = 'Equip'
+    let actionDisabled = false
+    let disabledReason: string | null = null
+
+    if (dialogTarget.mode === 'shop') {
+      action = `Buy (💰 ${price})`
+      if (user.gold < (price ?? 0)) {
+        actionDisabled = true
+        disabledReason = 'Not enough gold'
+      } else if (inventory.length >= 30) {
+        actionDisabled = true
+        disabledReason = 'Inventory is full'
+      }
+    } else if (consumableEffect?.type === 'stat_boost') {
+      action = 'Use'
+    } else if (dialogTarget.isEquipped) {
+      action = 'Unequip'
+    }
+
+    return {action, name, icon, rarityColor, description, statsDescription, actionDisabled, disabledReason, price}
+  }, [dialogTarget, user.gold, inventory.length])
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -196,59 +350,32 @@ export default function InventoryScreen() {
         <Text variant="headlineSmall" style={styles.headerTitle}>
           Inventory
         </Text>
+        <Chip style={styles.goldChip} textStyle={styles.goldText} mode="flat">
+          💰 {user.gold}
+        </Chip>
       </Surface>
 
+      <View style={styles.segmentContainer}>
+        <SegmentedButtons
+          value={segment}
+          onValueChange={(value) => setSegment(value as 'bag' | 'shop')}
+          buttons={[
+            {value: 'bag', label: 'Bag', icon: 'bag-personal'},
+            {value: 'shop', label: 'Shop', icon: 'store'}
+          ]}
+        />
+      </View>
+
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Equipment Section */}
-        <View style={styles.section}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Equipment
-          </Text>
-          <View style={styles.equipmentGrid}>
-            {/* Row 0: Helmet, Amulet */}
-            <View style={styles.equipmentRow}>
-              <View style={[styles.equipmentCell, {width: cellSize}]} />
-              <EquipmentSlot item={equipped.helmet} slotInfo={EQUIPMENT_SLOTS.helmet} onTap={handleTap} />
-              <View style={[styles.equipmentCell, {width: cellSize}]} />
-            </View>
-
-            {/* Row 1: Weapon, Armor, Offhand */}
-            <View style={styles.equipmentRow}>
-              <EquipmentSlot item={equipped.weapon} slotInfo={EQUIPMENT_SLOTS.weapon} onTap={handleTap} />
-              <EquipmentSlot item={equipped.armor} slotInfo={EQUIPMENT_SLOTS.armor} onTap={handleTap} />
-              <EquipmentSlot item={equipped.offhand} slotInfo={EQUIPMENT_SLOTS.offhand} onTap={handleTap} />
-            </View>
-
-            {/* Row 2: Gloves, Ring */}
-            <View style={styles.equipmentRow}>
-              <EquipmentSlot item={equipped.gloves} slotInfo={EQUIPMENT_SLOTS.gloves} onTap={handleTap} />
-              <EquipmentSlot item={equipped.ring} slotInfo={EQUIPMENT_SLOTS.ring} onTap={handleTap} />
-              <EquipmentSlot item={equipped.amulet} slotInfo={EQUIPMENT_SLOTS.amulet} onTap={handleTap} />
-            </View>
-
-            {/* Row 3: Boots, Pockets */}
-            <View style={styles.equipmentRow}>
-              <EquipmentSlot item={equipped.pocket1} slotInfo={EQUIPMENT_SLOTS.pocket1} onTap={handleTap} />
-              <EquipmentSlot item={equipped.boots} slotInfo={EQUIPMENT_SLOTS.boots} onTap={handleTap} />
-              <EquipmentSlot item={equipped.pocket2} slotInfo={EQUIPMENT_SLOTS.pocket2} onTap={handleTap} />
-            </View>
-          </View>
-        </View>
-
-        {/* Backpack Section */}
-        <View style={styles.section}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Backpack
-          </Text>
-          <View style={styles.backpackContainer}>
-            <BackpackGrid items={inventory} onTap={handleTap} />
-          </View>
-        </View>
+        {segment === 'bag' ? (
+          <BagView cellSize={cellSize} onTap={handleBagTap} />
+        ) : (
+          <ShopView gold={user.gold} onTap={handleShopTap} />
+        )}
       </ScrollView>
 
-      {/* Equip/Unequip Confirmation Dialog */}
       <Portal>
-        <Dialog visible={!!dialogItem} onDismiss={() => setDialogItem(null)} style={styles.dialog}>
+        <Dialog visible={!!dialogTarget} onDismiss={() => setDialogTarget(null)} style={styles.dialog}>
           <View style={styles.dialogHeader}>
             <Text style={[styles.dialogTitle, dialogInfo && {color: dialogInfo.rarityColor}]}>
               {dialogInfo ? `${dialogInfo.icon} ${dialogInfo.name}` : ''}
@@ -263,12 +390,20 @@ export default function InventoryScreen() {
                 </Text>
               ))}
             </View>
+            {dialogInfo?.disabledReason && (
+              <Text style={styles.dialogWarning}>{dialogInfo.disabledReason}</Text>
+            )}
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setDialogItem(null)} textColor="#888">
+            <Button onPress={() => setDialogTarget(null)} textColor="#888">
               Cancel
             </Button>
-            <Button onPress={handleConfirmAction} mode="contained" buttonColor="#4a90e2">
+            <Button
+              onPress={handleConfirmAction}
+              mode="contained"
+              buttonColor="#4a90e2"
+              disabled={dialogInfo?.actionDisabled}
+            >
               {dialogInfo?.action ?? 'Equip'}
             </Button>
           </Dialog.Actions>
@@ -285,7 +420,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -296,6 +431,19 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: '#fff',
     fontWeight: 'bold'
+  },
+  goldChip: {
+    backgroundColor: '#0f3460',
+    borderColor: '#ffd700',
+    borderWidth: 1
+  },
+  goldText: {
+    color: '#ffd700',
+    fontWeight: 'bold'
+  },
+  segmentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12
   },
   scrollView: {
     flex: 1
@@ -379,6 +527,45 @@ const styles = StyleSheet.create({
   itemIcon: {
     fontSize: 24
   },
+  itemIconLarge: {
+    fontSize: 32
+  },
+  shopGrid: {
+    backgroundColor: '#16213e',
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'center'
+  },
+  shopItem: {
+    alignItems: 'center',
+    gap: 4,
+    width: SHOP_CELL_SIZE
+  },
+  priceTag: {
+    backgroundColor: '#0f3460',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ffd700',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: SHOP_CELL_SIZE,
+    alignItems: 'center'
+  },
+  priceTagUnaffordable: {
+    borderColor: '#666',
+    opacity: 0.6
+  },
+  priceText: {
+    color: '#ffd700',
+    fontSize: 11,
+    fontWeight: 'bold'
+  },
+  priceTextUnaffordable: {
+    color: '#888'
+  },
   dialog: {
     backgroundColor: '#16213e'
   },
@@ -403,5 +590,11 @@ const styles = StyleSheet.create({
   dialogStat: {
     color: '#4ade80',
     fontSize: 14
+  },
+  dialogWarning: {
+    color: '#e94560',
+    fontSize: 13,
+    marginTop: 12,
+    fontWeight: 'bold'
   }
 })

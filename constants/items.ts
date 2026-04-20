@@ -33,7 +33,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'weapon',
     rarity: 'common',
     stats: {damage: {from: 2, to: 5}},
-    description: 'A worn blade, still sharp enough to cut.'
+    description: 'A worn blade, still sharp enough to cut.',
+    price: 50
   },
   iron_sword: {
     id: 'iron_sword',
@@ -42,7 +43,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'weapon',
     rarity: 'common',
     stats: {damage: {from: 4, to: 8}},
-    description: 'A sturdy iron blade.'
+    description: 'A sturdy iron blade.',
+    price: 150
   },
   steel_blade: {
     id: 'steel_blade',
@@ -69,7 +71,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'weapon',
     rarity: 'common',
     stats: {damage: {from: 3, to: 7}, attackSpeed: -25},
-    description: 'A reliable bow for hunting prey.'
+    description: 'A reliable bow for hunting prey.',
+    price: 120
   },
   war_hammer: {
     id: 'war_hammer',
@@ -109,7 +112,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'helmet',
     rarity: 'common',
     stats: {armor: 2, maxHealth: 5},
-    description: 'Basic head protection.'
+    description: 'Basic head protection.',
+    price: 60
   },
   iron_helm: {
     id: 'iron_helm',
@@ -140,7 +144,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'armor',
     rarity: 'common',
     stats: {armor: 3, maxHealth: 10},
-    description: 'Simple cloth garment.'
+    description: 'Simple cloth garment.',
+    price: 80
   },
   leather_armor: {
     id: 'leather_armor',
@@ -149,7 +154,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'armor',
     rarity: 'common',
     stats: {armor: 6, maxHealth: 15},
-    description: 'Flexible leather protection.'
+    description: 'Flexible leather protection.',
+    price: 180
   },
   chainmail: {
     id: 'chainmail',
@@ -180,7 +186,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'gloves',
     rarity: 'common',
     stats: {armor: 1},
-    description: 'Simple hand coverings.'
+    description: 'Simple hand coverings.',
+    price: 30
   },
   leather_gloves: {
     id: 'leather_gloves',
@@ -189,7 +196,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'gloves',
     rarity: 'common',
     stats: {armor: 2, attackSpeed: -25},
-    description: 'Good grip and protection.'
+    description: 'Good grip and protection.',
+    price: 90
   },
   gauntlets: {
     id: 'gauntlets',
@@ -211,7 +219,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'boots',
     rarity: 'common',
     stats: {attackSpeed: -25},
-    description: 'Light footwear.'
+    description: 'Light footwear.',
+    price: 40
   },
   leather_boots: {
     id: 'leather_boots',
@@ -220,7 +229,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'boots',
     rarity: 'common',
     stats: {armor: 2, attackSpeed: -25},
-    description: 'Sturdy walking boots.'
+    description: 'Sturdy walking boots.',
+    price: 100
   },
   swift_boots: {
     id: 'swift_boots',
@@ -242,7 +252,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'offhand',
     rarity: 'common',
     stats: {armor: 5, maxHealth: 10},
-    description: 'Basic wooden protection.'
+    description: 'Basic wooden protection.',
+    price: 90
   },
   iron_shield: {
     id: 'iron_shield',
@@ -273,7 +284,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'ring',
     rarity: 'common',
     stats: {maxHealth: 5},
-    description: 'A simple copper band.'
+    description: 'A simple copper band.',
+    price: 70
   },
   silver_ring: {
     id: 'silver_ring',
@@ -313,7 +325,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'amulet',
     rarity: 'common',
     stats: {maxHealth: 10},
-    description: 'Carved from ancient bones.'
+    description: 'Carved from ancient bones.',
+    price: 80
   },
   jade_amulet: {
     id: 'jade_amulet',
@@ -344,7 +357,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'rare',
     stats: {},
     description: 'Ancient knowledge grants +1 Strength permanently.',
-    consumableEffect: {type: 'stat_boost', stat: 'strength', amount: 1}
+    consumableEffect: {type: 'stat_boost', stat: 'strength', amount: 1},
+    price: 500
   },
   book_of_agility: {
     id: 'book_of_agility',
@@ -353,7 +367,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'rare',
     stats: {},
     description: 'Ancient knowledge grants +1 Agility permanently.',
-    consumableEffect: {type: 'stat_boost', stat: 'agility', amount: 1}
+    consumableEffect: {type: 'stat_boost', stat: 'agility', amount: 1},
+    price: 500
   },
   book_of_vitality: {
     id: 'book_of_vitality',
@@ -362,7 +377,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'rare',
     stats: {},
     description: 'Ancient knowledge grants +1 Vitality permanently.',
-    consumableEffect: {type: 'stat_boost', stat: 'vitality', amount: 1}
+    consumableEffect: {type: 'stat_boost', stat: 'vitality', amount: 1},
+    price: 500
   },
   health_potion_small: {
     id: 'health_potion_small',
@@ -372,7 +388,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'common',
     stats: {},
     description: 'A small flask that restores 20 HP.',
-    consumableEffect: {type: 'heal', amount: 20}
+    consumableEffect: {type: 'heal', amount: 20},
+    price: 25
   },
   health_potion_medium: {
     id: 'health_potion_medium',
@@ -382,7 +399,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'magic',
     stats: {},
     description: 'A sturdy flask that restores 50 HP.',
-    consumableEffect: {type: 'heal', amount: 50}
+    consumableEffect: {type: 'heal', amount: 50},
+    price: 80
   },
   health_potion_large: {
     id: 'health_potion_large',
@@ -392,9 +410,39 @@ export const ITEMS: Record<string, ItemDefinition> = {
     rarity: 'rare',
     stats: {},
     description: 'A potent flask that restores 100 HP.',
-    consumableEffect: {type: 'heal', amount: 100}
+    consumableEffect: {type: 'heal', amount: 100},
+    price: 200
   }
 }
+
+// Items available in the shop, in display order.
+// Any item ID with a `price` defined in ITEMS can be added here.
+export const SHOP_ITEMS: string[] = [
+  // Weapons
+  'rusty_sword',
+  'iron_sword',
+  'hunters_bow',
+  // Armor
+  'leather_cap',
+  'cloth_tunic',
+  'leather_armor',
+  'cloth_gloves',
+  'leather_gloves',
+  'sandals',
+  'leather_boots',
+  'wooden_shield',
+  // Accessories
+  'copper_ring',
+  'bone_amulet',
+  // Potions
+  'health_potion_small',
+  'health_potion_medium',
+  'health_potion_large',
+  // Books
+  'book_of_strength',
+  'book_of_agility',
+  'book_of_vitality'
+]
 
 // Helper to get item definition by id
 export const getItemDefinition = (id: string): ItemDefinition | undefined => ITEMS[id]
