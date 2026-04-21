@@ -1,4 +1,4 @@
-import {EQUIPMENT_SLOTS, getItemDefinition, RARITY_COLORS, SHOP_ITEMS} from '@/constants/items'
+import {EQUIPMENT_SLOTS, getItemDefinition, getSellPrice, RARITY_COLORS, SHOP_ITEMS} from '@/constants/items'
 import {useGameDispatch, useGameState} from '@/contexts/GameContext'
 import {EquipmentSlotType, InventoryItem, ItemDefinition} from '@/types/game'
 import {useLocalSearchParams} from 'expo-router'
@@ -17,9 +17,7 @@ const SHOP_CELL_SIZE = 64
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window')
 
-type DialogTarget =
-  | {mode: 'bag'; item: InventoryItem; isEquipped: boolean}
-  | {mode: 'shop'; definitionId: string}
+type DialogTarget = {mode: 'bag'; item: InventoryItem; isEquipped: boolean} | {mode: 'shop'; definitionId: string}
 
 function ItemCell({
   definition,
@@ -144,21 +142,13 @@ function ShopItemCard({
     <View style={styles.shopItem}>
       <ItemCell definition={definition} onTap={onTap} size={SHOP_CELL_SIZE} />
       <View style={[styles.priceTag, !canAfford && styles.priceTagUnaffordable]}>
-        <Text style={[styles.priceText, !canAfford && styles.priceTextUnaffordable]}>
-          💰 {definition.price}
-        </Text>
+        <Text style={[styles.priceText, !canAfford && styles.priceTextUnaffordable]}>💰 {definition.price}</Text>
       </View>
     </View>
   )
 }
 
-function BagView({
-  cellSize,
-  onTap
-}: {
-  cellSize: number
-  onTap: (item: InventoryItem, isEquipped: boolean) => void
-}) {
+function BagView({cellSize, onTap}: {cellSize: number; onTap: (item: InventoryItem, isEquipped: boolean) => void}) {
   const {equipped, inventory} = useGameState()
 
   return (
@@ -208,10 +198,7 @@ function BagView({
 
 function ShopView({gold, onTap}: {gold: number; onTap: (definitionId: string) => void}) {
   const shopEntries = useMemo(
-    () =>
-      SHOP_ITEMS.map((id) => getItemDefinition(id)).filter(
-        (def): def is ItemDefinition => !!def && typeof def.price === 'number'
-      ),
+    () => SHOP_ITEMS.map((id) => getItemDefinition(id)).filter((def): def is ItemDefinition => !!def),
     []
   )
 
@@ -222,12 +209,7 @@ function ShopView({gold, onTap}: {gold: number; onTap: (definitionId: string) =>
       </Text>
       <View style={styles.shopGrid}>
         {shopEntries.map((def) => (
-          <ShopItemCard
-            key={def.id}
-            definition={def}
-            canAfford={gold >= (def.price ?? 0)}
-            onTap={() => onTap(def.id)}
-          />
+          <ShopItemCard key={def.id} definition={def} canAfford={gold >= def.price} onTap={() => onTap(def.id)} />
         ))}
       </View>
     </View>
@@ -259,6 +241,12 @@ export default function InventoryScreen() {
   const handleShopTap = useCallback((definitionId: string) => {
     setDialogTarget({mode: 'shop', definitionId})
   }, [])
+
+  const handleSell = useCallback(() => {
+    if (!dialogTarget || dialogTarget.mode !== 'bag' || dialogTarget.isEquipped) return
+    dispatch({type: 'SELL_ITEM', instanceId: dialogTarget.item.instanceId})
+    setDialogTarget(null)
+  }, [dialogTarget, dispatch])
 
   const handleConfirmAction = useCallback(() => {
     if (!dialogTarget) return
@@ -298,8 +286,7 @@ export default function InventoryScreen() {
   const dialogInfo = useMemo(() => {
     if (!dialogTarget) return null
 
-    const definitionId =
-      dialogTarget.mode === 'bag' ? dialogTarget.item.definitionId : dialogTarget.definitionId
+    const definitionId = dialogTarget.mode === 'bag' ? dialogTarget.item.definitionId : dialogTarget.definitionId
     const definition = getItemDefinition(definitionId)
     if (!definition) return null
 
@@ -325,10 +312,11 @@ export default function InventoryScreen() {
     let action = 'Equip'
     let actionDisabled = false
     let disabledReason: string | null = null
+    let sellPrice: number | null = null
 
     if (dialogTarget.mode === 'shop') {
       action = `Buy (💰 ${price})`
-      if (user.gold < (price ?? 0)) {
+      if (user.gold < price) {
         actionDisabled = true
         disabledReason = 'Not enough gold'
       } else if (inventory.length >= 30) {
@@ -341,7 +329,20 @@ export default function InventoryScreen() {
       action = 'Unequip'
     }
 
-    return {action, name, icon, rarityColor, description, statsDescription, actionDisabled, disabledReason, price}
+    if (dialogTarget.mode === 'bag' && !dialogTarget.isEquipped) sellPrice = getSellPrice(definition)
+
+    return {
+      action,
+      name,
+      icon,
+      rarityColor,
+      description,
+      statsDescription,
+      actionDisabled,
+      disabledReason,
+      price,
+      sellPrice
+    }
   }, [dialogTarget, user.gold, inventory.length])
 
   return (
@@ -390,14 +391,20 @@ export default function InventoryScreen() {
                 </Text>
               ))}
             </View>
-            {dialogInfo?.disabledReason && (
-              <Text style={styles.dialogWarning}>{dialogInfo.disabledReason}</Text>
+            {dialogInfo?.sellPrice != null && (
+              <Text style={styles.dialogSellHint}>Sells for 💰 {dialogInfo.sellPrice}</Text>
             )}
+            {dialogInfo?.disabledReason && <Text style={styles.dialogWarning}>{dialogInfo.disabledReason}</Text>}
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setDialogTarget(null)} textColor="#888">
               Cancel
             </Button>
+            {dialogInfo?.sellPrice != null && (
+              <Button onPress={handleSell} textColor="#ffd700">
+                Sell (💰 {dialogInfo.sellPrice})
+              </Button>
+            )}
             <Button
               onPress={handleConfirmAction}
               mode="contained"
@@ -590,6 +597,12 @@ const styles = StyleSheet.create({
   dialogStat: {
     color: '#4ade80',
     fontSize: 14
+  },
+  dialogSellHint: {
+    color: '#ffd700',
+    fontSize: 12,
+    marginTop: 12,
+    opacity: 0.8
   },
   dialogWarning: {
     color: '#e94560',

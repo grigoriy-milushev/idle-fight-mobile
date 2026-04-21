@@ -1,4 +1,4 @@
-import {createEmptyEquippedItems, getItemDefinition} from '@/constants/items'
+import {createEmptyEquippedItems, getItemDefinition, getSellPrice} from '@/constants/items'
 import {monsters} from '@/constants/monsters'
 import {
   DamageResult,
@@ -39,6 +39,7 @@ export type GameAction =
   | {type: 'EQUIP_ITEM'; item: InventoryItem; targetSlot: EquipmentSlotType}
   | {type: 'UNEQUIP_ITEM'; slotType: EquipmentSlotType}
   | {type: 'BUY_ITEM'; definitionId: string}
+  | {type: 'SELL_ITEM'; instanceId: string}
 
 const createTestInventory = (): InventoryItem[] => [
   {instanceId: 'test-1', definitionId: 'rusty_sword'},
@@ -298,7 +299,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'BUY_ITEM': {
       const definition = getItemDefinition(action.definitionId)
-      if (!definition?.price) return state
+      if (!definition) return state
       if (state.user.gold < definition.price) return state
       if (state.inventory.length >= MAX_INVENTORY_SIZE) return state
 
@@ -311,6 +312,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         user: {...state.user, gold: state.user.gold - definition.price},
         inventory: [...state.inventory, newItem]
+      }
+    }
+
+    case 'SELL_ITEM': {
+      const item = state.inventory.find((i) => i.instanceId === action.instanceId)
+      if (!item) return state
+      const definition = getItemDefinition(item.definitionId)
+      if (!definition) return state
+
+      const sellPrice = getSellPrice(definition)
+
+      return {
+        ...state,
+        inventory: state.inventory.filter((i) => i.instanceId !== action.instanceId),
+        user: {...state.user, gold: state.user.gold + sellPrice}
       }
     }
 

@@ -8,6 +8,12 @@ export const RARITY_COLORS: Record<ItemRarity, string> = {
   legendary: '#ff8c00'
 }
 
+const SELL_RATIO = 0.4
+
+export function getSellPrice(definition: ItemDefinition): number {
+  return Math.max(1, Math.floor(definition.price * SELL_RATIO))
+}
+
 export const EQUIPMENT_SLOTS = {
   helmet: {label: 'Helmet', icon: '🪖'},
   amulet: {label: 'Amulet', icon: '📿'},
@@ -53,7 +59,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'weapon',
     rarity: 'magic',
     stats: {damage: {from: 6, to: 12}},
-    description: 'Finely crafted steel with a keen edge.'
+    description: 'Finely crafted steel with a keen edge.',
+    price: 400
   },
   battle_axe: {
     id: 'battle_axe',
@@ -62,7 +69,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'weapon',
     rarity: 'magic',
     stats: {damage: {from: 8, to: 15}},
-    description: 'Heavy and devastating in combat.'
+    description: 'Heavy and devastating in combat.',
+    price: 500
   },
   hunters_bow: {
     id: 'hunters_bow',
@@ -81,7 +89,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'weapon',
     rarity: 'rare',
     stats: {damage: {from: 10, to: 20}},
-    description: 'Crushes armor and bones alike.'
+    description: 'Crushes armor and bones alike.',
+    price: 1000
   },
   magic_staff: {
     id: 'magic_staff',
@@ -90,7 +99,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'weapon',
     rarity: 'rare',
     stats: {damage: {from: 5, to: 10}, maxHealth: 20},
-    description: 'Channels arcane energies.'
+    description: 'Channels arcane energies.',
+    price: 900
   },
   doom_blade: {
     id: 'doom_blade',
@@ -99,7 +109,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'weapon',
     rarity: 'legendary',
     stats: {damage: {from: 15, to: 30}, attackSpeed: -100},
-    description: 'A cursed blade that hungers for souls.'
+    description: 'A cursed blade that hungers for souls.',
+    price: 4000
   },
 
   // ============================================================================
@@ -122,7 +133,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'helmet',
     rarity: 'magic',
     stats: {armor: 5, maxHealth: 10},
-    description: 'Solid iron protection for your head.'
+    description: 'Solid iron protection for your head.',
+    price: 350
   },
   crown_of_kings: {
     id: 'crown_of_kings',
@@ -131,7 +143,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'helmet',
     rarity: 'legendary',
     stats: {armor: 8, maxHealth: 25, attackSpeed: -50},
-    description: 'Worn by ancient rulers.'
+    description: 'Worn by ancient rulers.',
+    price: 3500
   },
 
   // ============================================================================
@@ -164,7 +177,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'armor',
     rarity: 'magic',
     stats: {armor: 10, maxHealth: 20},
-    description: 'Interlocking metal rings.'
+    description: 'Interlocking metal rings.',
+    price: 500
   },
   plate_armor: {
     id: 'plate_armor',
@@ -173,7 +187,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'armor',
     rarity: 'rare',
     stats: {armor: 15, maxHealth: 30, attackSpeed: 50},
-    description: 'Heavy but extremely protective.'
+    description: 'Heavy but extremely protective.',
+    price: 1200
   },
 
   // ============================================================================
@@ -206,7 +221,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'gloves',
     rarity: 'magic',
     stats: {armor: 4, damage: {from: 1, to: 2}},
-    description: 'Armored gloves that pack a punch.'
+    description: 'Armored gloves that pack a punch.',
+    price: 400
   },
 
   // ============================================================================
@@ -239,7 +255,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'boots',
     rarity: 'rare',
     stats: {armor: 3, attackSpeed: -75},
-    description: 'Enchanted for speed.'
+    description: 'Enchanted for speed.',
+    price: 900
   },
 
   // ============================================================================
@@ -262,7 +279,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'offhand',
     rarity: 'magic',
     stats: {armor: 10, maxHealth: 20},
-    description: 'Heavy iron defense.'
+    description: 'Heavy iron defense.',
+    price: 400
   },
   tower_shield: {
     id: 'tower_shield',
@@ -271,7 +289,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'offhand',
     rarity: 'rare',
     stats: {armor: 18, maxHealth: 35, attackSpeed: 100},
-    description: 'Maximum protection at the cost of speed.'
+    description: 'Maximum protection at the cost of speed.',
+    price: 1200
   },
 
   // ============================================================================
@@ -294,7 +313,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'ring',
     rarity: 'magic',
     stats: {maxHealth: 10},
-    description: 'A polished silver ring.'
+    description: 'A polished silver ring.',
+    price: 300
   },
   ring_of_power: {
     id: 'ring_of_power',
@@ -303,7 +323,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'ring',
     rarity: 'rare',
     stats: {damage: {from: 2, to: 4}},
-    description: 'Grants immense strength.'
+    description: 'Grants immense strength.',
+    price: 1000
   },
   ring_of_speed: {
     id: 'ring_of_speed',
@@ -312,7 +333,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'ring',
     rarity: 'rare',
     stats: {attackSpeed: -50},
-    description: 'Quickens your movements.'
+    description: 'Quickens your movements.',
+    price: 1000
   },
 
   // ============================================================================
@@ -335,7 +357,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'amulet',
     rarity: 'magic',
     stats: {maxHealth: 15},
-    description: 'Smooth jade brings vitality.'
+    description: 'Smooth jade brings vitality.',
+    price: 350
   },
   amulet_of_fury: {
     id: 'amulet_of_fury',
@@ -344,7 +367,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     slot: 'amulet',
     rarity: 'legendary',
     stats: {damage: {from: 5, to: 8}, attackSpeed: -100},
-    description: 'Channels raw fury into power.'
+    description: 'Channels raw fury into power.',
+    price: 3500
   },
 
   // ============================================================================
