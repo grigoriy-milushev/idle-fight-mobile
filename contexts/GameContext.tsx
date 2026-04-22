@@ -1,4 +1,4 @@
-import {createEmptyEquippedItems, getItemDefinition, getSellPrice} from '@/constants/items'
+import {createEmptyEquippedItems, generateShopStock, getItemDefinition, getSellPrice} from '@/constants/items'
 import {monsters} from '@/constants/monsters'
 import {
   DamageResult,
@@ -38,8 +38,9 @@ export type GameAction =
   | {type: 'USE_POTION'; slot: 'pocket1' | 'pocket2'}
   | {type: 'EQUIP_ITEM'; item: InventoryItem; targetSlot: EquipmentSlotType}
   | {type: 'UNEQUIP_ITEM'; slotType: EquipmentSlotType}
-  | {type: 'BUY_ITEM'; definitionId: string}
+  | {type: 'BUY_ITEM'; listingId: string}
   | {type: 'SELL_ITEM'; instanceId: string}
+  | {type: 'RESTOCK_SHOP'}
 
 const createTestInventory = (): InventoryItem[] => [
   {instanceId: 'test-1', definitionId: 'rusty_sword'},
@@ -298,7 +299,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'BUY_ITEM': {
-      const definition = getItemDefinition(action.definitionId)
+      const listing = state.shopStock.find((l) => l.listingId === action.listingId)
+      if (!listing) return state
+      const definition = getItemDefinition(listing.definitionId)
       if (!definition) return state
       if (state.user.gold < definition.price) return state
       if (state.inventory.length >= MAX_INVENTORY_SIZE) return state
@@ -311,8 +314,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         user: {...state.user, gold: state.user.gold - definition.price},
-        inventory: [...state.inventory, newItem]
+        inventory: [...state.inventory, newItem],
+        shopStock: state.shopStock.filter((l) => l.listingId !== action.listingId)
       }
+    }
+
+    case 'RESTOCK_SHOP': {
+      return {...state, shopStock: generateShopStock(), shopLastRestockAt: Date.now()}
     }
 
     case 'SELL_ITEM': {
@@ -345,6 +353,8 @@ const createInitialState = (): GameState => ({
   respawnTimer: 0,
   equipped: createEmptyEquippedItems(),
   inventory: createTestInventory(),
+  shopStock: generateShopStock(),
+  shopLastRestockAt: Date.now(),
   userAttack: undefined,
   monsterAttack: undefined,
   goldGained: undefined

@@ -52,10 +52,14 @@ export type GameState = {
   respawnTimer: number
   equipped: EquippedItems
   inventory: InventoryItem[]
+  shopStock: ShopListing[]
+  shopLastRestockAt: number
   userAttack?: DamageResult
   monsterAttack?: DamageResult
   goldGained?: number
 }
+
+export type ShopListing = {listingId: string; definitionId: string}
 
 // ============================================================================
 // INVENTORY SYSTEM
@@ -84,9 +88,7 @@ export interface ItemStats {
   critDamage?: number // flat bonus (e.g. 0.25 = +25% crit multiplier)
 }
 
-export type ConsumableEffect =
-  | {type: 'stat_boost'; stat: StatType; amount: number}
-  | {type: 'heal'; amount: number}
+export type ConsumableEffect = {type: 'stat_boost'; stat: StatType; amount: number} | {type: 'heal'; amount: number}
 
 export interface ItemDefinition {
   id: string

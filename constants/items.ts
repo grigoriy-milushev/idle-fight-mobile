@@ -1,4 +1,4 @@
-import {ItemDefinition, ItemRarity} from '@/types/game'
+import {ItemDefinition, ItemRarity, ShopListing} from '@/types/game'
 
 // Rarity colors for UI
 export const RARITY_COLORS: Record<ItemRarity, string> = {
@@ -439,9 +439,10 @@ export const ITEMS: Record<string, ItemDefinition> = {
   }
 }
 
-// Items available in the shop, in display order.
-// Any item ID with a `price` defined in ITEMS can be added here.
-export const SHOP_ITEMS: string[] = [
+// Pool of items that can appear in the shop. Items listed in
+// `SHOP_ALWAYS_STOCKED` are guaranteed on every restock; the rest is
+// randomised.
+export const SHOP_POOL: string[] = [
   // Weapons
   'rusty_sword',
   'iron_sword',
@@ -458,15 +459,37 @@ export const SHOP_ITEMS: string[] = [
   // Accessories
   'copper_ring',
   'bone_amulet',
-  // Potions
-  'health_potion_small',
-  'health_potion_medium',
-  'health_potion_large',
   // Books
   'book_of_strength',
   'book_of_agility',
   'book_of_vitality'
 ]
+
+export const SHOP_ALWAYS_STOCKED: string[] = ['health_potion_small', 'health_potion_medium', 'health_potion_large']
+
+const SHOP_RANDOM_COUNT = 8
+export const SHOP_RESTOCK_MS = 4 * 60 * 60 * 1000
+
+function shuffle<T>(arr: T[]): T[] {
+  const copy = [...arr]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
+
+function makeListing(definitionId: string): ShopListing {
+  return {
+    listingId: `${definitionId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    definitionId
+  }
+}
+
+export function generateShopStock(): ShopListing[] {
+  const rotating = shuffle(SHOP_POOL).slice(0, SHOP_RANDOM_COUNT)
+  return [...SHOP_ALWAYS_STOCKED, ...rotating].map(makeListing)
+}
 
 // Helper to get item definition by id
 export const getItemDefinition = (id: string): ItemDefinition | undefined => ITEMS[id]

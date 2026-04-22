@@ -1,6 +1,6 @@
-import {EQUIPMENT_SLOTS, getItemDefinition, getSellPrice, RARITY_COLORS, SHOP_ITEMS} from '@/constants/items'
+import {EQUIPMENT_SLOTS, getItemDefinition, getSellPrice, RARITY_COLORS, SHOP_RESTOCK_MS} from '@/constants/items'
 import {useGameDispatch, useGameState} from '@/contexts/GameContext'
-import {EquipmentSlotType, InventoryItem, ItemDefinition} from '@/types/game'
+import {EquipmentSlotType, InventoryItem, ItemDefinition, ShopListing} from '@/types/game'
 import {useLocalSearchParams} from 'expo-router'
 import React, {useCallback, useEffect, useMemo, useState} from 'react'
 import {Dimensions, Pressable, ScrollView, StyleSheet, View} from 'react-native'
@@ -17,7 +17,18 @@ const SHOP_CELL_SIZE = 64
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window')
 
-type DialogTarget = {mode: 'bag'; item: InventoryItem; isEquipped: boolean} | {mode: 'shop'; definitionId: string}
+type DialogTarget = {mode: 'bag'; item: InventoryItem; isEquipped: boolean} | {mode: 'shop'; listing: ShopListing}
+
+function formatDuration(ms: number): string {
+  if (ms <= 0) return 'Restocking...'
+  const totalSeconds = Math.ceil(ms / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  if (hours > 0) return `${hours}h ${minutes}m`
+  if (minutes > 0) return `${minutes}m ${seconds}s`
+  return `${seconds}s`
+}
 
 function ItemCell({
   definition,
@@ -196,37 +207,79 @@ function BagView({cellSize, onTap}: {cellSize: number; onTap: (item: InventoryIt
   )
 }
 
-function ShopView({gold, onTap}: {gold: number; onTap: (definitionId: string) => void}) {
-  const shopEntries = useMemo(
-    () => SHOP_ITEMS.map((id) => getItemDefinition(id)).filter((def): def is ItemDefinition => !!def),
-    []
+function ShopView({
+  gold,
+  stock,
+  restockInMs,
+  onTap
+}: {
+  gold: number
+  stock: ShopListing[]
+  restockInMs: number
+  onTap: (listing: ShopListing) => void
+}) {
+  const entries = useMemo(
+    () =>
+      stock.flatMap((listing) => {
+        const definition = getItemDefinition(listing.definitionId)
+        return definition ? [{listing, definition}] : []
+      }),
+    [stock]
   )
 
   return (
     <View style={styles.section}>
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        Shop
-      </Text>
+      <View style={styles.shopHeader}>
+        <Text variant="titleMedium" style={styles.sectionTitle}>
+          Shop
+        </Text>
+        <Text style={styles.restockText}>Restocks in {formatDuration(restockInMs)}</Text>
+      </View>
       <View style={styles.shopGrid}>
-        {shopEntries.map((def) => (
-          <ShopItemCard key={def.id} definition={def} canAfford={gold >= def.price} onTap={() => onTap(def.id)} />
-        ))}
+        {entries.length === 0 ? (
+          <Text style={styles.emptyShopText}>Stock exhausted. Come back after the next restock!</Text>
+        ) : (
+          entries.map(({listing, definition}) => (
+            <ShopItemCard
+              key={listing.listingId}
+              definition={definition}
+              canAfford={gold >= definition.price}
+              onTap={() => onTap(listing)}
+            />
+          ))
+        )}
       </View>
     </View>
   )
 }
 
 export default function InventoryScreen() {
-  const {equipped, inventory, user} = useGameState()
+  const {equipped, inventory, user, shopStock, shopLastRestockAt} = useGameState()
   const dispatch = useGameDispatch()
   const params = useLocalSearchParams<{view?: string}>()
   const [segment, setSegment] = useState<'bag' | 'shop'>('bag')
   const [dialogTarget, setDialogTarget] = useState<DialogTarget | null>(null)
+  const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
     if (params.view === 'shop') setSegment('shop')
     else if (params.view === 'bag') setSegment('bag')
   }, [params.view])
+
+  const restockInMs = Math.max(0, shopLastRestockAt + SHOP_RESTOCK_MS - now)
+  useEffect(() => {
+    if (segment !== 'shop') return
+
+    const tick = () => {
+      const nowTs = Date.now()
+      if (nowTs >= shopLastRestockAt + SHOP_RESTOCK_MS) dispatch({type: 'RESTOCK_SHOP'})
+      setNow(nowTs)
+    }
+
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [segment, shopLastRestockAt, dispatch])
 
   // TODO: too complex, simplify this
   const cellSize = useMemo(() => {
@@ -238,8 +291,8 @@ export default function InventoryScreen() {
     setDialogTarget({mode: 'bag', item, isEquipped})
   }, [])
 
-  const handleShopTap = useCallback((definitionId: string) => {
-    setDialogTarget({mode: 'shop', definitionId})
+  const handleShopTap = useCallback((listing: ShopListing) => {
+    setDialogTarget({mode: 'shop', listing})
   }, [])
 
   const handleSell = useCallback(() => {
@@ -252,7 +305,7 @@ export default function InventoryScreen() {
     if (!dialogTarget) return
 
     if (dialogTarget.mode === 'shop') {
-      dispatch({type: 'BUY_ITEM', definitionId: dialogTarget.definitionId})
+      dispatch({type: 'BUY_ITEM', listingId: dialogTarget.listing.listingId})
       setDialogTarget(null)
       return
     }
@@ -286,7 +339,8 @@ export default function InventoryScreen() {
   const dialogInfo = useMemo(() => {
     if (!dialogTarget) return null
 
-    const definitionId = dialogTarget.mode === 'bag' ? dialogTarget.item.definitionId : dialogTarget.definitionId
+    const definitionId =
+      dialogTarget.mode === 'bag' ? dialogTarget.item.definitionId : dialogTarget.listing.definitionId
     const definition = getItemDefinition(definitionId)
     if (!definition) return null
 
@@ -371,7 +425,7 @@ export default function InventoryScreen() {
         {segment === 'bag' ? (
           <BagView cellSize={cellSize} onTap={handleBagTap} />
         ) : (
-          <ShopView gold={user.gold} onTap={handleShopTap} />
+          <ShopView gold={user.gold} stock={shopStock} restockInMs={restockInMs} onTap={handleShopTap} />
         )}
       </ScrollView>
 
@@ -537,6 +591,23 @@ const styles = StyleSheet.create({
   itemIconLarge: {
     fontSize: 32
   },
+  shopHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  restockText: {
+    color: '#ffd700',
+    fontSize: 12,
+    opacity: 0.8
+  },
+  emptyShopText: {
+    color: '#aaa',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16
+  },
   shopGrid: {
     backgroundColor: '#16213e',
     borderRadius: 12,
@@ -544,7 +615,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    justifyContent: 'center'
+    justifyContent: 'center',
+    minHeight: 120
   },
   shopItem: {
     alignItems: 'center',
