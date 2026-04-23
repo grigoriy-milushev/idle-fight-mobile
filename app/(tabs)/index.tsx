@@ -1,4 +1,5 @@
 import {FloatingNumbersContainer} from '@/components/FloatingNumbersContainer'
+import {ScreenHeader} from '@/components/ScreenHeader'
 import {StatsModal, StatsSection} from '@/components/StatsModal'
 import {ProgressBarWithText} from '@/components/ui/ProgressBarWithText'
 import {RARITY_COLORS, getItemDefinition} from '@/constants/items'
@@ -6,10 +7,9 @@ import {useGameDispatch, useGameState} from '@/contexts/GameContext'
 import {useFightAnimations} from '@/hooks/useFightAnimations'
 import {ConsumableEffect, InventoryItem, StatType, User} from '@/types/game'
 import {useIsFocused} from '@react-navigation/native'
-import {router} from 'expo-router'
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {Pressable, StyleSheet, View} from 'react-native'
-import {Button, Card, Chip, IconButton, Surface, Text} from 'react-native-paper'
+import {Button, Card, IconButton, Text} from 'react-native-paper'
 import Animated from 'react-native-reanimated'
 import {SafeAreaView} from 'react-native-safe-area-context'
 
@@ -168,17 +168,7 @@ export default function IdleFightScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <Surface style={styles.header} elevation={2}>
-        <View style={styles.headerSpacer} />
-        <Pressable
-          onPress={() => router.push('/inventory?view=shop')}
-          style={({pressed}) => [styles.goldChipPressable, pressed && styles.goldChipPressed]}
-        >
-          <Chip style={styles.goldChip} textStyle={styles.goldText} mode="flat">
-            💰 {user.gold}
-          </Chip>
-        </Pressable>
-      </Surface>
+      <ScreenHeader title="Arena" />
       <View style={styles.monsterSection}>
         <Card style={styles.fighterCard}>
           <Card.Content style={styles.fighterContent}>
@@ -302,34 +292,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1a1a2e'
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    backgroundColor: '#16213e',
-    borderBottomWidth: 1,
-    borderBottomColor: '#0f3460'
-  },
-  headerSpacer: {
-    flex: 1
-  },
-  goldChipPressable: {
-    borderRadius: 16
-  },
-  goldChipPressed: {
-    opacity: 0.6
-  },
-  goldChip: {
-    backgroundColor: '#0f3460',
-    borderColor: '#ffd700',
-    borderWidth: 1
-  },
-  goldText: {
-    color: '#ffd700',
-    fontWeight: 'bold'
   },
   monsterSection: {
     justifyContent: 'flex-start',
